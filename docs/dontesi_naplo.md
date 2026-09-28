@@ -264,3 +264,87 @@ a mi feladatunk. Ha később egyetemi címtárhoz kellene kapcsolódni, a hitele
 **Alternatívák.** Saját stílusok · WPF-UI (Fluent) · MaterialDesignInXamlToolkit · MahApps.Metro.
 
 **Szempontok.** Vizuális igényesség, egységesség, a leltározó képernyő visszajelzési színeinek kezelése, függőség mérete.
+
+---
+
+## D-017 – Konfiguráció és titkok kezelése a szerveren
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** szerver, biztonság
+
+**Kontextus.** A szervernek adatbázis-kapcsolati adat és JWT aláíró kulcs kell. Ezek gépenként eltérnek, a kulcs
+pedig titok (D-015).
+
+**Alternatívák.** 1) Minden beállítás az `appsettings.json`-ban. 2) .NET felhasználói titkok (`dotnet user-secrets`).
+3) Git által figyelmen kívül hagyott `appsettings.Local.json` + mintafájl a repóban, környezeti változókkal felülírható.
+
+**Szempontok.** Ne kerüljön titok a repóba, egyszerű legyen beállítani, ugyanúgy működjön Visual Studióban, Riderben
+és parancssorból, bemutatón gyorsan átírható legyen.
+
+**Döntés.** **3.** Az `appsettings.json` csak a nem titkos alapértékeket tartalmazza (kibocsátó, célközönség, token
+érvényessége). A gépfüggő és titkos értékek az `appsettings.Local.json`-ba kerülnek, amelyet a `.gitignore` kizár; a
+repóban az `appsettings.Local.example.json` mutatja a szerkezetét. Környezeti változóval (pl. `Jwt__Kulcs`) minden
+érték felülírható.
+
+**Következmények.** A szerver induláskor ellenőrzi a JWT beállításokat (a kulcs legalább 32 karakter), és hiányzó
+kapcsolati adatnál egyértelmű hibaüzenettel áll le, nem egy későbbi kérésnél hibázik.
+
+---
+
+## D-018 – Egységes hibaformátum: Problem Details
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** kommunikáció
+
+**Alternatívák.** 1) Csak HTTP státuszkód, üres törzzsel. 2) Saját hibaobjektum. 3) Szabványos Problem Details
+(RFC 9457, `application/problem+json`).
+
+**Döntés.** **3.** Minden hibás válasz (400, 401, 403, 404, 500) Problem Details objektum, amelynek `detail` mezője
+a felhasználónak megjeleníthető, magyar nyelvű üzenet. Az ASP.NET Core ezt beépítetten támogatja.
+
+**Következmények.** A kliens egyetlen, közös hibakezelővel dolgozhatja fel a szerver összes hibáját. Váratlan
+kivételnél a válasz nem tartalmaz belső részleteket (veremtartalom), azok csak a szerver naplójába kerülnek.
+
+---
+
+## D-019 – Alapértelmezetten minden végpont hitelesítést kér
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** szerver, biztonság
+
+**Alternatívák.** 1) Minden végpontra egyenként `[Authorize]`. 2) Globális alapszabály (fallback policy), amely
+alól a nyilvános végpontok kifejezetten kivételt kapnak.
+
+**Döntés.** **2.** Csak a bejelentkezés (`POST /api/auth/login`) és az állapotlekérdezés (`GET /api/allapot`) érhető
+el token nélkül. A szerepkör szerinti korlátozás a jogosultsági mátrix alapján a végpontokra kerül.
+
+**Következmények.** Egy új végpont nem lehet véletlenül nyilvános – egy elfelejtett jelölés legfeljebb túl szigorú
+lesz, nem túl engedékeny.
+
+---
+
+## D-020 – Célkeretrendszer: .NET 8 (LTS)
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** fejlesztőkörnyezet
+
+**Alternatívák.** .NET 8 (hosszú távú támogatás) · .NET 9 (rövid távú támogatás) · .NET 10 (LTS).
+
+**Szempontok.** Mindhárom tag gépén fordítható legyen, a használt könyvtárak stabil verziója elérhető legyen.
+
+**Döntés.** Minden projekt `net8.0` (a kliens `net8.0-windows`) célra fordul. A `global.json` legalább 8.0-s SDK-t
+kér, de újabb fő verziót is elfogad, így .NET 9 vagy 10 SDK-val is fordítható.
+
+**Következmények.** A .NET 8 támogatása 2026 novemberében lejár; a félév második felében érdemes .NET 10-re
+váltani. Ez a projektfájlok célkeretrendszerének és a csomagverzióknak a cseréjét jelenti, kódmódosítást várhatóan nem.
+
+---
+
+## D-021 – Controller-alapú API és rétegzett szerver
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** szerver, architektúra
+
+**Alternatívák.** 1) Minimal API (végpontok közvetlenül a `Program.cs`-ben). 2) Controllerek + szolgáltatásosztályok.
+
+**Döntés.** **2.** A controllerek csak a HTTP-réteget kezelik (bemenet, státuszkód); az üzleti logika
+szolgáltatásosztályokban (`Szolgaltatasok/`) van, amelyeket függőséginjektálás ad át. Az adatátviteli típusok a
+`Kozos` projektben vannak, amelyet a kliens is használ.
+
+**Következmények.** Erőforrásonként egy controller, így a félév során bővülő API átlátható marad. A szolgáltatások a
+HTTP-rétegtől függetlenül is tesztelhetők.

@@ -1,7 +1,8 @@
 # ProjektLab – Leltározó és leltárkezelő alkalmazás
 
-Ez a mappa a Projekt labor tárgy féléves munkájának kiinduló anyagait tartalmazza.
-A jelenlegi tartalom az **1. alkalomhoz** szükséges feladatokat fedi le.
+Ez a repository a Projekt labor tárgy féléves munkájának anyagait és az alkalmazás forráskódját tartalmazza.
+Az alkalmankénti anyagok a `0X_alkalom/` mappákban, a forráskód az `src/` és a `tests/` mappában található
+(fordítás és futtatás: [Forráskód](#forráskód)).
 
 ## Mit vár az 1. alkalom?
 
@@ -52,6 +53,104 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [03_alkalom/05_Fejlesztesi_utemterv.md](03_alkalom/05_Fejlesztesi_utemterv.md) | Fejlesztési ütemterv, GitHub mérföldkövek, a 4. alkalom feladatai |
 | [03_alkalom/Dokumentacio/](03_alkalom/Dokumentacio/) | Dokumentáció v0.2: Bevezetés + Rendszerterv (technológiák, adatmodell) |
 | [docs/dontesi_naplo.md](docs/dontesi_naplo.md) | Döntési napló: feltételezések, alternatívák, döntések, következmények |
+
+### 4. alkalom – Prototípus / proof of concept
+
+| Fájl | Mire való |
+|---|---|
+| [LeltarKezelo.sln](LeltarKezelo.sln) | A teljes megoldás (kliens, szerver, közös projekt, tesztek) |
+| [04_alkalom/01_Szerver_PoC.md](04_alkalom/01_Szerver_PoC.md) | Szerver PoC: rétegek, végpontok, hitelesítés, konfiguráció, kliens–szerver kommunikáció |
+| [04_alkalom/Dokumentacio/](04_alkalom/Dokumentacio/) | Dokumentáció: architektúra, kommunikáció, szerver PoC fejezetek |
+
+## Forráskód
+
+### Szerkezet
+
+```
+LeltarKezelo.sln
+├── src/
+│   ├── Kliens/     WPF asztali alkalmazás (net8.0-windows)
+│   ├── Szerver/    ASP.NET Core Web API (net8.0)
+│   │   ├── Controllers/       HTTP végpontok
+│   │   ├── Szolgaltatasok/    üzleti logika, hitelesítés
+│   │   └── Adat/              EF Core DbContext, entitások, konfigurációk, migrációk
+│   └── Kozos/      A kliens és a szerver közös adatátviteli típusai (DTO-k), API-útvonalak
+└── tests/
+    └── Szerver.Tesztek/   A szerver API integrációs tesztjei (xUnit)
+```
+
+### Szükséges eszközök
+
+| Eszköz | Verzió |
+|---|---|
+| .NET SDK | 8.0 vagy újabb (a `global.json` újabb fő verziót is elfogad) |
+| Microsoft SQL Server | 2019 vagy újabb, Express vagy Developer kiadás |
+| EF Core parancssori eszköz | `dotnet tool install --global dotnet-ef --version 8.*` |
+| Fejlesztőkörnyezet | Visual Studio 2022 (.NET asztali és ASP.NET munkaterhelés) vagy JetBrains Rider |
+
+### Első indítás
+
+1. **Helyi beállítások.** Másold le a mintafájlt, és töltsd ki a saját adataiddal:
+
+   ```bash
+   cp src/Szerver/appsettings.Local.example.json src/Szerver/appsettings.Local.json
+   ```
+
+   - `ConnectionStrings:Leltar` – a saját SQL Server példányod (alapértelmezés: `localhost\SQLEXPRESS`, Windows-hitelesítés);
+   - `Jwt:Kulcs` – legalább 32 karakteres véletlen szöveg, pl. PowerShellben:
+     `$b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)`;
+   - `KezdoAdmin` – fejlesztői módban, üres felhasználótábla esetén ezzel a névvel és jelszóval jön létre az első
+     adminisztrátor.
+
+   Az `appsettings.Local.json` **nem kerül a repóba** (`.gitignore`). Minden érték környezeti változóval is megadható,
+   pl. `ConnectionStrings__Leltar`, `Jwt__Kulcs`.
+
+2. **Adatbázis létrehozása** a repóban lévő migrációkból:
+
+   ```bash
+   dotnet ef database update --project src/Szerver
+   ```
+
+3. **Szerver indítása:**
+
+   ```bash
+   dotnet run --project src/Szerver --launch-profile https
+   ```
+
+   A Swagger felület: <https://localhost:7080/swagger> (HTTP-n: <http://localhost:5080/swagger>). Első HTTPS-indítás
+   előtt: `dotnet dev-certs https --trust`.
+
+4. **Kliens indítása** (külön terminálban vagy Visual Studióban több indítási projekttel):
+
+   ```bash
+   dotnet run --project src/Kliens
+   ```
+
+### Tesztek
+
+```bash
+dotnet test
+```
+
+A szerver tesztjei memóriabeli adatbázissal, a valódi HTTP-csővezetéken keresztül futnak, így SQL Server nélkül is
+lefuttathatók.
+
+### Gyors próba Swaggerben
+
+1. `POST /api/auth/login` a `KezdoAdmin` adataival → a válaszban kapott `token` értékét másold ki.
+2. Jobb felül **Authorize** → illeszd be a tokent.
+3. `GET /api/eszkozok?kereses=...&oldal=1&oldalMeret=50` → lapozott eszközlista.
+
+### Főbb könyvtárak
+
+| Könyvtár | Verzió | Hol | Mire |
+|---|---|---|---|
+| Microsoft.EntityFrameworkCore.SqlServer | 8.0.11 | Szerver | ORM, SQL Server elérés |
+| Microsoft.EntityFrameworkCore.Design | 8.0.11 | Szerver | Migrációk (`dotnet ef`) |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 8.0.11 | Szerver | JWT token ellenőrzése |
+| Microsoft.Extensions.Identity.Core | 8.0.11 | Szerver | Jelszó-hash (`PasswordHasher`, PBKDF2) |
+| Swashbuckle.AspNetCore | 6.6.2 | Szerver | OpenAPI leírás, Swagger UI |
+| xUnit, Microsoft.AspNetCore.Mvc.Testing, EF Core InMemory | 2.5.3 / 8.0.11 | Tesztek | Integrációs tesztek |
 
 > A `.md` fájlokban lévő diagramok Mermaid formátumúak – GitHubon és VS Code-ban (Mermaid bővítménnyel) ábraként jelennek meg.
 
