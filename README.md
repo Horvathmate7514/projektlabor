@@ -41,6 +41,18 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [02_alkalom/Dokumentacio/](02_alkalom/Dokumentacio/) | A dokumentáció első ~5 oldala (Bevezetés fejezet) |
 | [02_alkalom/Prezentacio/](02_alkalom/Prezentacio/) | 5 perces prezentáció előadói jegyzetekkel |
 
+### 3. alkalom – Tervezési alapok
+
+| Fájl | Mire való |
+|---|---|
+| [03_alkalom/01_Kiegeszito_funkcio_javaslat.md](03_alkalom/01_Kiegeszito_funkcio_javaslat.md) | Kiegészítő funkció javaslat: webkamerás vonalkód-beolvasás + címke- és leltárjegyzőkönyv-generálás |
+| [03_alkalom/02_Technologiai_dontesek.md](03_alkalom/02_Technologiai_dontesek.md) | A közös technológiai részdöntések összefoglalója |
+| [03_alkalom/03_Adatmodell_v1.md](03_alkalom/03_Adatmodell_v1.md) | Adatmodell v1: ER-diagram, táblák, kulcsok, indexek, megszorítások, EF Core |
+| [03_alkalom/04_Excel_lekepezes.md](03_alkalom/04_Excel_lekepezes.md) | Az Excel forrásadatok leképezése az adatmodellre, importfolyamat, tesztesetek |
+| [03_alkalom/05_Fejlesztesi_utemterv.md](03_alkalom/05_Fejlesztesi_utemterv.md) | Fejlesztési ütemterv, GitHub mérföldkövek, a 4. alkalom feladatai |
+| [03_alkalom/Dokumentacio/](03_alkalom/Dokumentacio/) | Dokumentáció v0.2: Bevezetés + Rendszerterv (technológiák, adatmodell) |
+| [docs/dontesi_naplo.md](docs/dontesi_naplo.md) | Döntési napló: feltételezések, alternatívák, döntések, következmények |
+
 > A `.md` fájlokban lévő diagramok Mermaid formátumúak – GitHubon és VS Code-ban (Mermaid bővítménnyel) ábraként jelennek meg.
 
 ## Az 1. alkalom teendői – gyors checklist
