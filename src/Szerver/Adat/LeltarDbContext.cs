@@ -13,10 +13,24 @@ public class LeltarDbContext(DbContextOptions<LeltarDbContext> options) : DbCont
     public DbSet<EszkozAllapot> EszkozAllapotok => Set<EszkozAllapot>();
     public DbSet<Felhasznalo> Felhasznalok => Set<Felhasznalo>();
     public DbSet<Szerepkor> Szerepkorok => Set<Szerepkor>();
+    public DbSet<Kiegeszito> Kiegeszitok => Set<Kiegeszito>();
+    public DbSet<Helyiseg> Helyisegek => Set<Helyiseg>();
+    public DbSet<Elhelyezes> Elhelyezesek => Set<Elhelyezes>();
+    public DbSet<FelelosSzemely> FelelosSzemelyek => Set<FelelosSzemely>();
+    public DbSet<FelelosHozzarendeles> FelelosHozzarendelesek => Set<FelelosHozzarendeles>();
+    public DbSet<AllapotValtozas> AllapotValtozasok => Set<AllapotValtozas>();
+    public DbSet<LeltarIdoszak> LeltarIdoszakok => Set<LeltarIdoszak>();
+    public DbSet<ElvartTetel> ElvartTetelek => Set<ElvartTetel>();
+    public DbSet<Leolvasas> Leolvasasok => Set<Leolvasas>();
+    public DbSet<KiegeszitoEllenorzes> KiegeszitoEllenorzesek => Set<KiegeszitoEllenorzes>();
+    public DbSet<ImportFutas> ImportFutasok => Set<ImportFutas>();
+    public DbSet<ImportHiba> ImportHibak => Set<ImportHiba>();
+    public DbSet<AuditNaplo> AuditNaplo => Set<AuditNaplo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LeltarDbContext).Assembly);
+        KezdetiAdatok.Feltoltes(modelBuilder);
 
         foreach (var fk in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             fk.DeleteBehavior = DeleteBehavior.Restrict;

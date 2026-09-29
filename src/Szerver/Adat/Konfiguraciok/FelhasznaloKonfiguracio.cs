@@ -18,6 +18,9 @@ public class FelhasznaloKonfiguracio : IEntityTypeConfiguration<Felhasznalo>
 
         builder.HasMany(f => f.Szerepkorok).WithMany(s => s.Felhasznalok)
             .UsingEntity("FelhasznaloSzerepkor");
+
+        builder.HasMany(f => f.JogosultKorzetek).WithMany()
+            .UsingEntity("FelhasznaloLeltarkorzet");
     }
 }
 

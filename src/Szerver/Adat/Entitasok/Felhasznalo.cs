@@ -12,4 +12,7 @@ public class Felhasznalo
     public DateTime? UtolsoBelepes { get; set; }
 
     public ICollection<Szerepkor> Szerepkorok { get; set; } = [];
+
+    /// <summary>A leltárkörzetek, amelyekben a felhasználó leltározhat (jogosultsági mátrix).</summary>
+    public ICollection<Leltarkorzet> JogosultKorzetek { get; set; } = [];
 }
