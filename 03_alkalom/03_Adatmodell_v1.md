@@ -193,7 +193,7 @@ A leltár-összehasonlítás alapja (elvárt és tényleges mennyiség egymás m
 
 ```sql
 SELECT  e.Id, e.Megnevezes, t.ElvartMennyiseg,
-        ISNULL(SUM(CASE WHEN l.Sztornozva = 0 THEN l.Mennyiseg END), 0) AS Beolvasva
+        ISNULL(SUM(CASE WHEN l.Sztornozva = 0 AND l.Minosites <> 'ISMETELT' THEN l.Mennyiseg END), 0) AS Beolvasva
 FROM    ElvartTetel t
 JOIN    Eszkoz e ON e.Id = t.EszkozId
 LEFT JOIN Leolvasas l
@@ -205,6 +205,9 @@ GROUP BY e.Id, e.Megnevezes, t.ElvartMennyiseg;
 
 Ebből származik a megtalált, a hiányzó (beolvasva < elvárt), a többlet (beolvasva > elvárt) és – a
 `Minosites = 'MAS_KORZET'` szűréssel – a más körzetből előkerült tételek listája.
+
+> **Javítás (4. alkalom):** az első változatból kimaradt, hogy az `ISMETELT` minősítésű sor nem számít bele a
+> darabszámba (F-12), ezért a feltétel kiegészült. Lásd D-025. A megvalósított séma: `04_alkalom/02_Adatbazis_es_tesztadatok.md`.
 
 ## 5. Megvalósítás EF Core-ral
 

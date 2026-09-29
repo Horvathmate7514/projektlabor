@@ -60,7 +60,13 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 |---|---|
 | [LeltarKezelo.sln](LeltarKezelo.sln) | A teljes megoldás (kliens, szerver, közös projekt, tesztek) |
 | [04_alkalom/01_Szerver_PoC.md](04_alkalom/01_Szerver_PoC.md) | Szerver PoC: rétegek, végpontok, hitelesítés, konfiguráció, kliens–szerver kommunikáció |
-| [04_alkalom/Dokumentacio/](04_alkalom/Dokumentacio/) | Dokumentáció: architektúra, kommunikáció, szerver PoC fejezetek |
+| [04_alkalom/Dokumentacio/](04_alkalom/Dokumentacio/) | Dokumentáció: architektúra, kommunikáció, szerver PoC fejezetek; v0.4 összefésült dokumentáció |
+| [04_alkalom/02_Adatbazis_es_tesztadatok.md](04_alkalom/02_Adatbazis_es_tesztadatok.md) | Adatbázis: első migráció, teljes séma, kezdeti adatok, demóadatok, ellenőrzések, CI |
+| [04_alkalom/03_Teendok_az_5_alkalomig.md](04_alkalom/03_Teendok_az_5_alkalomig.md) | A 4. alkalom állapota és a feladatok az 5. alkalomig |
+| [04_alkalom/Prezentacio/](04_alkalom/Prezentacio/) | 10 perces prezentáció előadói jegyzetekkel |
+| [db/](db/) | Demóadat-szkript és az adatbázis-megszorítások ellenőrző szkriptje |
+| [docs/AI_hasznalati_naplo.md](docs/AI_hasznalati_naplo.md) | A mesterséges intelligencia használatának naplója (kötelező) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Közreműködési szabályok: ágak, commitok, pull requestek |
 
 ## Forráskód
 
@@ -73,10 +79,13 @@ LeltarKezelo.sln
 │   ├── Szerver/    ASP.NET Core Web API (net8.0)
 │   │   ├── Controllers/       HTTP végpontok
 │   │   ├── Szolgaltatasok/    üzleti logika, hitelesítés
-│   │   └── Adat/              EF Core DbContext, entitások, konfigurációk, migrációk
-│   └── Kozos/      A kliens és a szerver közös adatátviteli típusai (DTO-k), API-útvonalak
-└── tests/
-    └── Szerver.Tesztek/   A szerver API integrációs tesztjei (xUnit)
+│   │   └── Adat/              EF Core DbContext, entitások, konfigurációk, kezdeti adatok
+│   │       └── Migraciok/     EF Core migrációk
+│   └── Kozos/      A kliens és a szerver közös típusai (DTO-k, felsorolások), API-útvonalak
+├── tests/
+│   └── Szerver.Tesztek/   A szerver API integrációs tesztjei és az adatmodell tesztjei (xUnit)
+├── db/             Demóadat-szkript, az adatbázis-megszorítások ellenőrzése
+└── .github/workflows/     CI: fordítás és tesztek minden pushnál és pull requestnél
 ```
 
 ### Szükséges eszközök
@@ -96,7 +105,8 @@ LeltarKezelo.sln
    cp src/Szerver/appsettings.Local.example.json src/Szerver/appsettings.Local.json
    ```
 
-   - `ConnectionStrings:Leltar` – a saját SQL Server példányod (alapértelmezés: `localhost\SQLEXPRESS`, Windows-hitelesítés);
+   - `ConnectionStrings:Leltar` – a saját SQL Server példányod (a mintában `localhost\SQLEXPRESS`, Windows-hitelesítés;
+     alapértelmezett, név nélküli példánynál – pl. Developer kiadás – `Server=localhost`);
    - `Jwt:Kulcs` – legalább 32 karakteres véletlen szöveg, pl. PowerShellben:
      `$b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)`;
    - `KezdoAdmin` – fejlesztői módban, üres felhasználótábla esetén ezzel a névvel és jelszóval jön létre az első
@@ -105,13 +115,26 @@ LeltarKezelo.sln
    Az `appsettings.Local.json` **nem kerül a repóba** (`.gitignore`). Minden érték környezeti változóval is megadható,
    pl. `ConnectionStrings__Leltar`, `Jwt__Kulcs`.
 
-2. **Adatbázis létrehozása** a repóban lévő migrációkból:
+2. **Adatbázis létrehozása** a repóban lévő migrációkból (a `src/Szerver/Adat/Migraciok` mappa). A migráció a teljes
+   sémát és a kezdeti adatokat (kódtípusok, eszközállapotok, szerepkörök) is létrehozza:
 
    ```bash
    dotnet ef database update --project src/Szerver
    ```
 
-3. **Szerver indítása:**
+3. **Demóadatok betöltése (nem kötelező).** Üres, frissen migrált adatbázisba tölt 240 eszközt kódokkal, helyiségeket,
+   felelősöket, egy lezárt és egy nyitott leltárt, valamint öt demó felhasználót szerepkörönként
+   (a felhasználóneveket és a közös demójelszót a szkript fejléce tartalmazza). Az adatbázis nevét igazítsd a sajátodhoz:
+
+   ```bash
+   sqlcmd -S localhost -E -C -d LeltarKezelo -f 65001 -i db/demoadatok.sql
+   ```
+
+   Ha demóadatokat töltesz be, a `KezdoAdmin` nem jön létre (mert már van felhasználó), helyette a demó felhasználókkal
+   lehet belépni. Az adatbázis-megszorítások ellenőrzése: `sqlcmd ... -i db/ellenorzes.sql` (semmit nem módosít).
+   Részletek: [04_alkalom/02_Adatbazis_es_tesztadatok.md](04_alkalom/02_Adatbazis_es_tesztadatok.md).
+
+4. **Szerver indítása:**
 
    ```bash
    dotnet run --project src/Szerver --launch-profile https
@@ -120,7 +143,7 @@ LeltarKezelo.sln
    A Swagger felület: <https://localhost:7080/swagger> (HTTP-n: <http://localhost:5080/swagger>). Első HTTPS-indítás
    előtt: `dotnet dev-certs https --trust`.
 
-4. **Kliens indítása** (külön terminálban vagy Visual Studióban több indítási projekttel):
+5. **Kliens indítása** (külön terminálban vagy Visual Studióban több indítási projekttel):
 
    ```bash
    dotnet run --project src/Kliens
@@ -133,11 +156,14 @@ dotnet test
 ```
 
 A szerver tesztjei memóriabeli adatbázissal, a valódi HTTP-csővezetéken keresztül futnak, így SQL Server nélkül is
-lefuttathatók.
+lefuttathatók. Az adatmodell tesztjei (`AdatmodellTesztek`) az SQL Server-specifikus szabályokat (szűrt indexek,
+számított oszlop, CHECK megszorítások, törlési szabályok) és azt ellenőrzik, hogy a migrációk naprakészek-e.
+A GitHub Actions ugyanezt futtatja minden pushnál és pull requestnél (`.github/workflows/ci.yml`).
 
 ### Gyors próba Swaggerben
 
-1. `POST /api/auth/login` a `KezdoAdmin` adataival → a válaszban kapott `token` értékét másold ki.
+1. `POST /api/auth/login` a `KezdoAdmin` adataival (vagy egy demó felhasználóval) → a válaszban kapott `token`
+   értékét másold ki.
 2. Jobb felül **Authorize** → illeszd be a tokent.
 3. `GET /api/eszkozok?kereses=...&oldal=1&oldalMeret=50` → lapozott eszközlista.
 
