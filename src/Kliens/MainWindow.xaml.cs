@@ -1,23 +1,21 @@
-﻿using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Leltarkezelo.Client.ViewModels;
 
-namespace LeltarKezelo.Kliens;
+namespace Leltarkezelo.Client;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    public MainWindow() => InitializeComponent();
+    private void Show(string page, UIElement panel)
     {
-        InitializeComponent();
+        ((MainViewModel)DataContext).Navigate(page);
+        OverviewPanel.Visibility = Visibility.Collapsed; InventoryPanel.Visibility = Visibility.Collapsed; EquipmentPanel.Visibility = Visibility.Collapsed;
+        ComparisonPanel.Visibility = Visibility.Collapsed; ReportsPanel.Visibility = Visibility.Collapsed;
+        panel.Visibility = Visibility.Visible;
     }
+    private void Overview_Click(object sender, RoutedEventArgs e) => Show("Áttekintés", OverviewPanel);
+    private void Inventory_Click(object sender, RoutedEventArgs e) => Show("Leltározás", InventoryPanel);
+    private void Equipment_Click(object sender, RoutedEventArgs e) => Show("Eszközök", EquipmentPanel);
+    private void Comparison_Click(object sender, RoutedEventArgs e) => Show("Összehasonlítás", ComparisonPanel);
+    private void Reports_Click(object sender, RoutedEventArgs e) => Show("Import és riportok", ReportsPanel);
 }

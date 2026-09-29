@@ -1,4 +1,4 @@
-# ProjektLab – Leltározó és leltárkezelő alkalmazás
+# ProjektLab – Leltározó és leltárkezelő alkalmazás.
 
 Ez a repository a Projekt labor tárgy féléves munkájának anyagait és az alkalmazás forráskódját tartalmazza.
 Az alkalmankénti anyagok a `0X_alkalom/` mappákban, a forráskód az `src/` és a `tests/` mappában található

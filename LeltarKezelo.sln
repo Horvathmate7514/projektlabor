@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeltarKezelo.Kozos", "src\K
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeltarKezelo.Szerver", "src\Szerver\LeltarKezelo.Szerver.csproj", "{CDA71C39-42C7-4762-A668-6437BD06D993}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeltarKezelo.Kliens", "src\Kliens\LeltarKezelo.Kliens.csproj", "{A81792D1-693E-406B-B7A0-76C54AA91CE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leltarkezelo.Client", "src\Kliens\Leltarkezelo.Client.csproj", "{A81792D1-693E-406B-B7A0-76C54AA91CE0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeltarKezelo.Szerver.Tesztek", "tests\Szerver.Tesztek\LeltarKezelo.Szerver.Tesztek.csproj", "{CF942D38-9C08-4E1C-8767-23538452F763}"
 EndProject
