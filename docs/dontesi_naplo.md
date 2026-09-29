@@ -348,3 +348,86 @@ szolgáltatásosztályokban (`Szolgaltatasok/`) van, amelyeket függőséginjekt
 
 **Következmények.** Erőforrásonként egy controller, így a félév során bővülő API átlátható marad. A szolgáltatások a
 HTTP-rétegtől függetlenül is tesztelhetők.
+
+---
+
+## D-022 – Kezdeti adatok a migrációban, demóadatok külön szkriptben
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** adatbázis
+
+**Kontextus.** A kódtípusok, eszközállapotok és szerepkörök nélkül a rendszer nem működik; a bemutatóhoz és a kézi
+teszteléshez ezen felül valósághű adatmennyiség kell.
+
+**Alternatívák.** 1) Minden adat a migrációban (`HasData`). 2) Minden adat egy külső szkriptben. 3) A nélkülözhetetlen
+alapadatok a migrációban, a demóadatok külön szkriptben.
+
+**Döntés.** **3.** A kezdeti adatok (`Adat/KezdetiAdatok.cs`) rögzített azonosítókkal a migráció részei, így minden
+telepítésben azonosak. A demóadatok a `db/demoadatok.sql` szkriptben vannak, amely csak kézzel, fejlesztői vagy
+demó adatbázisba tölthető.
+
+**Következmények.** Az éles adatbázisba nem kerülhet véletlenül demóadat. A kezdeti adatok azonosítói nem
+módosíthatók, mert a demószkript és a későbbi migrációk is hivatkoznak rájuk.
+
+---
+
+## D-023 – Tesztadat-feltöltő: determinisztikus SQL-szkript
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** adatbázis, tesztelés
+
+**Alternatívák.** 1) A szerver parancssori kapcsolója. 2) Külön konzolos projekt. 3) SQL-szkript.
+Adatforrásként: saját, determinisztikus generátor vagy hamisadat-könyvtár (Bogus).
+
+**Szempontok.** Egyszerű futtatás, átláthatóság, megismételhetőség, új függőség elkerülése.
+
+**Döntés.** **SQL-szkript saját, determinisztikus generálással.** Nem használ véletlenszámot: minden érték az eszköz
+sorszámából számolódik, így minden futtatás ugyanazt az adatot adja. Üres, migrált adatbázist vár, és egyetlen
+tranzakcióban fut.
+
+**Következmények.** A jelszóhash-t az SQL nem tudja előállítani, ezért a demó felhasználók hash-e egyszer, a szerverrel
+azonos .NET jelszókezelővel készült, és rögzítve szerepel a szkriptben. Ha az adatmodell változik, a szkriptet kézzel
+kell igazítani – ezt a CI nem ellenőrzi, a `db/ellenorzes.sql` futtatása viszont kimutatja.
+
+---
+
+## D-024 – Technikai felsorolások tárolása: nagybetűs szöveg + CHECK
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** adatmodell
+
+**Alternatívák.** 1) Egész számként (az enum sorszáma). 2) Szövegként a C# névvel (`MasKorzet`). 3) Nagybetűs,
+aláhúzással tagolt szövegként (`MAS_KORZET`), CHECK megszorítással. 4) Külön kódtábla.
+
+**Döntés.** **3.** A minősítés, a beviteli mód, az időszak típusa és állapota és a többi technikai felsorolás
+nagybetűs szövegként tárolódik (az adatmodell v1 írásmódjával egyezően), a megengedett értékeket CHECK megszorítás
+védi. Az átalakítást egy közös EF Core értékkonverter végzi (`Konfiguraciok/Felsorolas.cs`), a CHECK feltétel is
+ugyanebből készül. A bővíthető listák (kódtípus, eszköztípus, eszközállapot) továbbra is valódi táblák.
+
+**Következmények.** Az adatbázis közvetlen lekérdezéskor is olvasható, a riportok SQL-ből is készíthetők. Új
+felsorolásérték felvétele migrációt igényel (a CHECK miatt), ami szándékos: így nem kerülhet be ismeretlen érték.
+
+---
+
+## D-025 – Az ismételt beolvasás nem számít bele a darabszámba
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** leltárlogika
+
+**Kontextus.** Az F-12 feltételezés szerint egyedi eszköz ismételt beolvasása nem növeli a darabszámot, az adatmodell v1
+összehasonlító lekérdezése azonban minden nem sztornózott sort összeadott.
+
+**Döntés.** A beolvasott darabszám a nem sztornózott és nem `ISMETELT` minősítésű leolvasások mennyiségének összege.
+A `TOBBLET` sor beleszámít (valóban több darab került elő), a `MAS_KORZET` is (az eszköz megvan, csak máshol).
+
+**Következmények.** Az összehasonlító lekérdezés és a szerver leltárlogikája ugyanezt a szabályt követi; az index
+ezért a `Minosites` oszlopot is tartalmazza.
+
+---
+
+## D-026 – Folyamatos integráció Windows futtatón
+
+- **Állapot:** elfogadott (4. alkalom) · **Terület:** projektkezelés
+
+**Döntés.** A GitHub Actions minden pushnál és pull requestnél lefordítja a teljes megoldást és lefuttatja a teszteket.
+A futtató Windows, mert a WPF kliens csak ott fordul. A migrációk naprakészségét egy automatikus teszt ellenőrzi,
+így ehhez nem kell külön eszközt telepíteni a CI-ban.
+
+**Következmények.** Egy hibás vagy migráció nélküli modellváltozás a pull requestben azonnal látszik. Az SQL
+Server-specifikus működést (megszorítások) a CI nem futtatja, azt a `db/ellenorzes.sql` kézi futtatása igazolja.
