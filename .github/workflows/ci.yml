@@ -1,0 +1,41 @@
+# Folyamatos integráció: minden pushnál és pull requestnél lefordítja a teljes megoldást
+# (a WPF kliens miatt Windows futtatón), és lefuttatja az automatikus teszteket.
+# A tesztek között van az is, amelyik ellenőrzi, hogy az adatmodell és a migrációk szinkronban vannak.
+name: CI
+
+on:
+  push:
+    branches: [ main, "200" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    name: Fordítás és tesztek
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Forráskód letöltése
+        uses: actions/checkout@v4
+
+      - name: .NET SDK telepítése
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Függőségek visszaállítása
+        run: dotnet restore LeltarKezelo.sln
+
+      - name: Fordítás
+        run: dotnet build LeltarKezelo.sln --no-restore --configuration Release
+
+      - name: Tesztek
+        run: dotnet test LeltarKezelo.sln --no-build --configuration Release --logger "trx;LogFileName=tesztek.trx" --results-directory TestResults
+
+      - name: Teszteredmények feltöltése
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: teszteredmenyek
+          path: TestResults
