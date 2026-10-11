@@ -26,10 +26,13 @@ public static class Jogosultsagok
         felhasznalo.IsInRole(Szerepkorok.Admin) || felhasznalo.IsInRole(Szerepkorok.Leltarfelelos);
 }
 
-/// <summary>Leltárkörzet szintű jogosultság: a leltározó csak a hozzá rendelt körzetekben rögzíthet beolvasást.</summary>
+/// <summary>
+/// Leltárkörzet szintű jogosultság (jogosultsági mátrix): a leltározó csak a hozzá rendelt körzetekben dolgozhat és
+/// azokat látja, a megtekintő a saját szervezeti egységének körzeteit látja. Az admin és a leltárfelelős mindent.
+/// </summary>
 public class KorzetJogosultsag(LeltarDbContext db)
 {
-    /// <returns>A felhasználó által leltározható körzetek; <c>null</c>, ha mindegyik.</returns>
+    /// <returns>A körzetek, amelyekben a felhasználó beolvashat; <c>null</c>, ha mindegyikben.</returns>
     public async Task<IReadOnlySet<long>?> LeltarozhatoKorzetekAsync(ClaimsPrincipal felhasznalo, CancellationToken ct)
     {
         if (felhasznalo.MindenKorzetben())
@@ -37,14 +40,37 @@ public class KorzetJogosultsag(LeltarDbContext db)
         if (!felhasznalo.IsInRole(Szerepkorok.Leltarozo))
             return new HashSet<long>();
 
-        var id = felhasznalo.FelhasznaloId();
-        var korzetek = await db.Felhasznalok.AsNoTracking()
-            .Where(f => f.Id == id)
-            .SelectMany(f => f.JogosultKorzetek.Select(k => k.Id))
-            .ToListAsync(ct);
-        return korzetek.ToHashSet();
+        return (await HozzarendeltKorzetekAsync(felhasznalo.FelhasznaloId(), ct)).ToHashSet();
     }
 
     public async Task<bool> LeltarozhatAsync(ClaimsPrincipal felhasznalo, long korzetId, CancellationToken ct) =>
         await LeltarozhatoKorzetekAsync(felhasznalo, ct) is not { } korzetek || korzetek.Contains(korzetId);
+
+    /// <returns>A körzetek, amelyek eszközeit a felhasználó láthatja; <c>null</c>, ha mindegyiket.</returns>
+    public async Task<IReadOnlySet<long>?> LathatoKorzetekAsync(ClaimsPrincipal felhasznalo, CancellationToken ct)
+    {
+        if (felhasznalo.MindenKorzetben())
+            return null;
+
+        var id = felhasznalo.FelhasznaloId();
+        var lathato = new HashSet<long>();
+        if (felhasznalo.IsInRole(Szerepkorok.Leltarozo))
+            lathato.UnionWith(await HozzarendeltKorzetekAsync(id, ct));
+        if (felhasznalo.IsInRole(Szerepkorok.Megtekinto))
+        {
+            var egyseg = await db.Felhasznalok.Where(f => f.Id == id).Select(f => f.SzervezetiEgyseg).SingleOrDefaultAsync(ct);
+            if (!string.IsNullOrWhiteSpace(egyseg))
+                lathato.UnionWith(await db.Leltarkorzetek
+                    .Where(k => k.SzervezetiEgyseg == egyseg)
+                    .Select(k => k.Id)
+                    .ToListAsync(ct));
+        }
+        return lathato;
+    }
+
+    private Task<List<long>> HozzarendeltKorzetekAsync(long felhasznaloId, CancellationToken ct) =>
+        db.Felhasznalok.AsNoTracking()
+            .Where(f => f.Id == felhasznaloId)
+            .SelectMany(f => f.JogosultKorzetek.Select(k => k.Id))
+            .ToListAsync(ct);
 }

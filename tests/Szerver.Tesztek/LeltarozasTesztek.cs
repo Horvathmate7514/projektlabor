@@ -348,7 +348,7 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
     [Fact]
     public async Task Korzet_nelkuli_leltarozo_sehol_sem_olvashat_be()
     {
-        var kliens = await gyar.BejelentkezettKliensAsync(); // Leltarozo, körzet nélkül
+        var kliens = await gyar.BejelentkezettKliensAsync(LeltarGyar.KorzetNelkuli);
         var id = await NyitottIdoszakAsync();
 
         var valasz = await BeolvasasKeresAsync(kliens, id, new BeolvasasKeres("SAP-0001", LeltarGyar.MikKorzet));

@@ -31,7 +31,9 @@ public class SzerverGyar : WebApplicationFactory<Program>
             services.AddDbContext<LeltarDbContext>(o => o.UseInMemoryDatabase(_adatbazisNev));
 
             using var scope = services.BuildServiceProvider().CreateScope();
-            Feltoltes(scope.ServiceProvider.GetRequiredService<LeltarDbContext>());
+            var db = scope.ServiceProvider.GetRequiredService<LeltarDbContext>();
+            Feltoltes(db);
+            db.SaveChanges();
         });
     }
 
@@ -46,6 +48,7 @@ public class SzerverGyar : WebApplicationFactory<Program>
         return kliens;
     }
 
+    /// <summary>A tesztadatok felvétele; a mentést a hívó végzi, egyetlen lépésben.</summary>
     protected virtual void Feltoltes(LeltarDbContext db)
     {
         var sap = new KodTipus { Id = 1, Nev = "SAP szám" };
@@ -61,11 +64,11 @@ public class SzerverGyar : WebApplicationFactory<Program>
             Eszkoz(3, "Irodai szék", masikKorzet, aktiv, Kod(sap, "SAP-0003")));
 
         var szerepkor = new Szerepkor { Nev = Szerepkorok.Leltarozo };
+        var teszt = Felhasznalo(Felhasznalonev, "Teszt Elek", true, szerepkor);
+        teszt.JogosultKorzetek = [korzet, masikKorzet];
         db.Felhasznalok.AddRange(
-            Felhasznalo(Felhasznalonev, "Teszt Elek", true, szerepkor),
+            teszt,
             Felhasznalo("inaktiv", "Inaktív Felhasználó", false, szerepkor));
-
-        db.SaveChanges();
     }
 
     protected static Felhasznalo Felhasznalo(string felhasznalonev, string nev, bool aktiv, Szerepkor szerepkor)

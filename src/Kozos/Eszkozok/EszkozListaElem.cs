@@ -8,4 +8,6 @@ public sealed record EszkozListaElem(
     string Allapot,
     int ElvartMennyiseg,
     string? MennyisegiEgyseg,
-    IReadOnlyList<string> Kodok);
+    IReadOnlyList<string> Kodok,
+    string? Helyiseg = null,
+    string? Felelos = null);

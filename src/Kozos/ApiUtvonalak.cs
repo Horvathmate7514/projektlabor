@@ -8,6 +8,10 @@ public static class ApiUtvonalak
     public const string Eszkozok = "api/eszkozok";
     public const string Leltarkorzetek = "api/leltarkorzetek";
     public const string KodTipusok = "api/kodtipusok";
+    public const string EszkozTipusok = "api/eszkoztipusok";
+    public const string EszkozAllapotok = "api/eszkozallapotok";
+    public const string Helyisegek = "api/helyisegek";
+    public const string Felelosok = "api/felelosok";
     public const string LeltarIdoszakok = "api/leltaridoszakok";
     public const string Leolvasasok = "api/leolvasasok";
 

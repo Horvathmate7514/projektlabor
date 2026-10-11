@@ -6,17 +6,27 @@ namespace LeltarKezelo.Szerver.Tesztek;
 
 /// <summary>
 /// A <see cref="SzerverGyar"/> adatai kiegészítve a leltározás eseteivel: mennyiséges és selejtezett eszköz,
-/// inaktivált kód, valamint leltárfelelős, körzethez rendelt leltározó és megtekintő felhasználó.
+/// inaktivált kód, típusfa, helyiségek és felelős, valamint leltárfelelős, körzethez rendelt és körzet nélküli
+/// leltározó és szervezeti egységhez kötött megtekintő felhasználó.
 /// </summary>
 public class LeltarGyar : SzerverGyar
 {
     public const string Felelos = "felelos";
     /// <summary>Csak a MIK-01 (1-es) körzetben leltározhat.</summary>
     public const string Leltarozo = "leltarozo";
+    /// <summary>A Gazdaságtudományi Kar megtekintője: csak a GTK-01 (2-es) körzetet látja.</summary>
     public const string Megtekinto = "megtekinto";
+    /// <summary>Leltározó szerepkörű, de egyetlen körzethez sincs rendelve.</summary>
+    public const string KorzetNelkuli = "korzetnelkuli";
 
     public const long MikKorzet = 1;
     public const long GtkKorzet = 2;
+
+    public const long SzamitastechnikaTipus = 10;
+    public const long MonitorTipus = 11;
+    public const long Terem101 = 1;
+    public const long KovacsAnna = 1;
+    public const string Gtk = "Gazdaságtudományi Kar";
 
     protected override void Feltoltes(LeltarDbContext db)
     {
@@ -39,13 +49,38 @@ public class LeltarGyar : SzerverGyar
         regiKod.Eszkoz = db.Eszkozok.Find(1L)!;
         db.EszkozKodok.Add(regiKod);
 
-        var leltarozo = Felhasznalo(Leltarozo, "Leltár Ozó", true, db.Szerepkorok.Single(s => s.Nev == Szerepkorok.Leltarozo));
+        // Típusfa, helyiség, felelős – az eszközlista szűrőihez.
+        var gep = db.Eszkozok.Find(1L)!;
+        var monitor = db.Eszkozok.Find(2L)!;
+        var szamtech = new EszkozTipus { Id = SzamitastechnikaTipus, Nev = "Számítástechnika" };
+        var monitorTipus = new EszkozTipus { Id = MonitorTipus, Nev = "Monitor", Szulo = szamtech };
+        gep.EszkozTipus = szamtech;
+        monitor.EszkozTipus = monitorTipus;
+
+        var terem = new Helyiseg { Id = Terem101, Epulet = "I", Szobaszam = "101" };
+        var regiTerem = new Helyiseg { Id = 2, Epulet = "I", Szobaszam = "102" };
+        var kezdet = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        db.Elhelyezesek.AddRange(
+            new Elhelyezes { Eszkoz = gep, Helyiseg = terem, ErvenyesTol = kezdet },
+            // A monitor korábban a 101-ben volt, ma a 102-ben: a szűrő csak az aktuális helyet nézi.
+            new Elhelyezes { Eszkoz = monitor, Helyiseg = terem, ErvenyesTol = kezdet, ErvenyesIg = kezdet.AddMonths(6) },
+            new Elhelyezes { Eszkoz = monitor, Helyiseg = regiTerem, ErvenyesTol = kezdet.AddMonths(6) });
+
+        var kovacs = new FelelosSzemely { Id = KovacsAnna, Nev = "Kovács Anna" };
+        db.FelelosHozzarendelesek.Add(new FelelosHozzarendeles { Eszkoz = monitor, Felelos = kovacs, ErvenyesTol = kezdet });
+
+        // A rögzített azonosítójú entitásokat kifejezetten fel kell venni, különben az EF meglévőnek tekinti őket.
+        db.AddRange(szamtech, monitorTipus, terem, regiTerem, kovacs);
+        db.Leltarkorzetek.Find(GtkKorzet)!.SzervezetiEgyseg = Gtk;
+
+        var leltarozo = Felhasznalo(Leltarozo, "Leltár Ozó", true, db.Szerepkorok.Local.Single(s => s.Nev == Szerepkorok.Leltarozo));
         leltarozo.JogosultKorzetek = [mik];
         db.Felhasznalok.AddRange(
             Felhasznalo(Felelos, "Leltár Felelős", true, new Szerepkor { Nev = Szerepkorok.Leltarfelelos }),
             leltarozo,
-            Felhasznalo(Megtekinto, "Meg Tekintő", true, new Szerepkor { Nev = Szerepkorok.Megtekinto }));
-
-        db.SaveChanges();
+            Felhasznalo(KorzetNelkuli, "Körzet Nélküli", true, db.Szerepkorok.Local.Single(s => s.Nev == Szerepkorok.Leltarozo)));
+        var megtekinto = Felhasznalo(Megtekinto, "Meg Tekintő", true, new Szerepkor { Nev = Szerepkorok.Megtekinto });
+        megtekinto.SzervezetiEgyseg = Gtk;
+        db.Felhasznalok.Add(megtekinto);
     }
 }
