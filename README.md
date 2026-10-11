@@ -68,6 +68,12 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [docs/AI_hasznalati_naplo.md](docs/AI_hasznalati_naplo.md) | A mesterséges intelligencia használatának naplója (kötelező) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Közreműködési szabályok: ágak, commitok, pull requestek |
 
+### 6. alkalom – A leltározás alapfunkciói
+
+| Fájl | Mire való |
+|---|---|
+| [06_alkalom/01_Leltarozas_szerver.md](06_alkalom/01_Leltarozas_szerver.md) | Szerveroldal: leltáridőszak és leolvasás állapotai, a minősítés szabályai, hibás esetek, végpontok, jogosultság, tesztek |
+
 ## Forráskód
 
 ### Szerkezet
@@ -166,6 +172,9 @@ A GitHub Actions ugyanezt futtatja minden pushnál és pull requestnél (`.githu
    értékét másold ki.
 2. Jobb felül **Authorize** → illeszd be a tokent.
 3. `GET /api/eszkozok?kereses=...&oldal=1&oldalMeret=50` → lapozott eszközlista.
+4. `GET /api/leltaridoszakok?statusz=Nyitott` → nyitott leltáridőszakok; `GET /api/leltarkorzetek` → körzetek.
+5. `POST /api/leltaridoszakok/{id}/leolvasasok` `{ "kod": "...", "aktivKorzetId": 1 }` → a beolvasás minősítése.
+   Olvasó nélkül tesztkód: `GET /api/leltaridoszakok/{id}/demokod?leltarkorzetId=1`.
 
 ### Főbb könyvtárak
 

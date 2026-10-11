@@ -431,3 +431,70 @@ A futtató Windows, mert a WPF kliens csak ott fordul. A migrációk naprakészs
 
 **Következmények.** Egy hibás vagy migráció nélküli modellváltozás a pull requestben azonnal látszik. Az SQL
 Server-specifikus működést (megszorítások) a CI nem futtatja, azt a `db/ellenorzes.sql` kézi futtatása igazolja.
+
+---
+
+## D-027 – A beolvasás minősítésének elsőbbségi sorrendje
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** leltárlogika
+
+**Kontextus.** Egy beolvasásra egyszerre több minősítés is igaz lehet (pl. egy selejtezett eszköz más körzetben,
+másodszor kerül elő). A leolvasás azonban egyetlen minősítést kap, és ettől függ, beleszámít-e a darabszámba.
+
+**Alternatívák.** 1) Több jelző a leolvasáson (minősítések halmaza). 2) Egy minősítés, rögzített elsőbbségi sorrenddel.
+
+**Döntés.** **2.** A sorrend: `ISMETELT` → `NEM_AKTIV` → `MAS_KORZET` → `TOBBLET` → `OK` (az `ISMERETLEN_KOD`
+eszköz híján külön ág). Az ismétlés áll elöl, hogy egy már megszámolt egyedi eszköz semmilyen más ok miatt se
+számítson kétszer; a más körzet megelőzi a többletet, mert az eltérő hely a fontosabb információ.
+
+**Következmények.** Az adatmodell változatlan (egy `Minosites` oszlop). A szabály egyetlen, mellékhatás nélküli
+függvényben van (`BeolvasasSzolgaltatas.Minosit`), és egységteszt rögzíti. Részletek: `06_alkalom/01_Leltarozas_szerver.md`, 4. pont.
+
+---
+
+## D-028 – Felsorolások a JSON-ban névvel
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** kommunikáció
+
+**Alternatívák.** 1) Sorszámként (a .NET alapértelmezése). 2) Névként, a szerveren globális beállítással.
+3) Névként, a `Kozos` projekt felsorolásain `[JsonConverter]` jelöléssel.
+
+**Döntés.** **3.** A `Minosites`, `BeviteliMod` és a többi közös felsorolás a JSON-ban névvel utazik (`"MasKorzet"`).
+A jelölés a típuson van, így a kliens és a szerver külön beállítás nélkül ugyanúgy szerializál.
+
+**Következmények.** A válaszok Swaggerben és naplóban olvashatók, és egy új érték felvétele nem tolja el a meglévők
+jelentését. Ismeretlen név küldése 400-as hibát ad.
+
+---
+
+## D-029 – Üzleti hibák: kivétel + MVC kivételszűrő
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** szerver
+
+**Kontextus.** A leltárlogika sokféle, a felhasználónak szóló hibát ad (lezárt időszak, nincs jogosultság a
+körzethez, hiányzó indoklás). Ezeket a D-018 szerint Problem Details formában kell visszaadni.
+
+**Alternatívák.** 1) A szolgáltatás eredményobjektumot ad vissza, a controller alakítja státuszkóddá. 2) A
+szolgáltatás `UzletiHiba` kivételt dob, egy központi kezelő alakítja át: a) köztes rétegként (`IExceptionHandler`),
+b) MVC kivételszűrőként.
+
+**Döntés.** **2b.** A szolgáltatás `UzletiHiba`-t dob (400/403/404/409 és magyar üzenet), az `UzletiHibaSzuro`
+Problem Details választ készít `traceId`-vel. Az egyidejű módosítás (`DbUpdateConcurrencyException`) 409-et ad.
+A köztes rétegű változatot (2a) elvetettük, mert a .NET 8 minden ott kezelt kivételt szerverhibaként naplóz.
+
+**Következmények.** A controllerek vékonyak maradnak (D-021). A váratlan kivételek továbbra is a köztes rétegig jutnak,
+500-as választ adnak belső részletek nélkül.
+
+---
+
+## D-030 – A pillanatkép tartalma a leltáridőszak nyitásakor
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** leltárlogika
+
+**Döntés.** Nyitáskor minden **nem megszűnt** állapotú eszköz bekerül az elvárt tételek közé, a nyitás pillanatában
+érvényes körzetével és elvárt mennyiségével (`FelvitelOka = PILLANATKEP`). A megszűnt (selejtezett, elveszett,
+ellopott, átadott) eszköz nem elvárt; ha mégis előkerül, `NEM_AKTIV` minősítéssel rögzül.
+
+**Következmények.** A hiányzó eszközök listájában nem jelenik meg a leltár előtt selejtezett tétel (D-001). A nyitás
+után felvett eszköz a jelenlegi törzsadat alapján minősül; az elvárt tételek utólagos bővítése (`UTOLAGOS`) a 7. alkalom
+feladata.
