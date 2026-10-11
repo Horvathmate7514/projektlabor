@@ -7,10 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeltarKezelo.Szerver.Szolgaltatasok;
 
-/// <summary>
-/// A leltáridőszak életciklusa: <c>TERVEZETT → NYITOTT → LEZART</c>. Beolvasni csak nyitott időszakba lehet,
-/// a lezárt időszak csak olvasható (F-18). Nyitáskor készül az elvárt állomány pillanatképe (D-003, D-030).
-/// </summary>
 public class LeltarIdoszakSzolgaltatas(LeltarDbContext db, TimeProvider ido)
 {
     public const int MaxMegnevezesHossz = 200;
@@ -59,10 +55,6 @@ public class LeltarIdoszakSzolgaltatas(LeltarDbContext db, TimeProvider ido)
         return (await ReszletekAsync(idoszak.Id, ct))!;
     }
 
-    /// <summary>
-    /// Megnyitja az időszakot, és rögzíti az elvárt állományt: minden nem megszűnt eszköz a nyitás pillanatában
-    /// érvényes körzetével és elvárt mennyiségével.
-    /// </summary>
     public async Task<LeltarIdoszakAdat> NyitasAsync(long id, CancellationToken ct)
     {
         var idoszak = await KeresesAsync(id, ct);

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LeltarKezelo.Szerver.Controllers;
 
-/// <summary>A kliens választólistáihoz szükséges törzsadatok (csak olvasás).</summary>
 [ApiController]
 public class TorzsadatokController(TorzsadatSzolgaltatas torzsadatok) : ControllerBase
 {

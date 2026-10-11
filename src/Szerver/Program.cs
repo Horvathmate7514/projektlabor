@@ -14,7 +14,6 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// A gépfüggő beállítások a környezeti változók és a parancssor ELŐTT töltődnek be, hogy azok felülírhassák őket (D-017).
 builder.Configuration
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()

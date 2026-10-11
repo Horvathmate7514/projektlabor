@@ -33,7 +33,6 @@ public class EszkozSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosultsa
         if (szuro.EszkozAllapotId is { } allapotId)
             lekerdezes = lekerdezes.Where(e => e.EszkozAllapotId == allapotId);
 
-        // Hely és felelős: csak az aktuális (lezáratlan) történeti sor számít (D-011).
         if (szuro.HelyisegId is { } helyisegId)
             lekerdezes = lekerdezes.Where(e => db.Elhelyezesek.Any(h =>
                 h.EszkozId == e.Id && h.ErvenyesIg == null && h.HelyisegId == helyisegId));
@@ -102,7 +101,6 @@ public class EszkozSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosultsa
             .SingleOrDefaultAsync(ct);
     }
 
-    /// <summary>A típus és minden leszármazottja; a típusfa kicsi, ezért egyszerre betöltjük.</summary>
     private async Task<List<long>> TipusEsAltipusaiAsync(long tipusId, CancellationToken ct)
     {
         var fa = await db.EszkozTipusok.AsNoTracking().Select(t => new { t.Id, t.SzuloId }).ToListAsync(ct);

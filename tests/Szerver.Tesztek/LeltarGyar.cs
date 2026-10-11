@@ -4,19 +4,11 @@ using LeltarKezelo.Szerver.Adat.Entitasok;
 
 namespace LeltarKezelo.Szerver.Tesztek;
 
-/// <summary>
-/// A <see cref="SzerverGyar"/> adatai kiegészítve a leltározás eseteivel: mennyiséges és selejtezett eszköz,
-/// inaktivált kód, típusfa, helyiségek és felelős, valamint leltárfelelős, körzethez rendelt és körzet nélküli
-/// leltározó és szervezeti egységhez kötött megtekintő felhasználó.
-/// </summary>
 public class LeltarGyar : SzerverGyar
 {
     public const string Felelos = "felelos";
-    /// <summary>Csak a MIK-01 (1-es) körzetben leltározhat.</summary>
     public const string Leltarozo = "leltarozo";
-    /// <summary>A Gazdaságtudományi Kar megtekintője: csak a GTK-01 (2-es) körzetet látja.</summary>
     public const string Megtekinto = "megtekinto";
-    /// <summary>Leltározó szerepkörű, de egyetlen körzethez sincs rendelve.</summary>
     public const string KorzetNelkuli = "korzetnelkuli";
 
     public const long MikKorzet = 1;
@@ -49,7 +41,6 @@ public class LeltarGyar : SzerverGyar
         regiKod.Eszkoz = db.Eszkozok.Find(1L)!;
         db.EszkozKodok.Add(regiKod);
 
-        // Típusfa, helyiség, felelős – az eszközlista szűrőihez.
         var gep = db.Eszkozok.Find(1L)!;
         var monitor = db.Eszkozok.Find(2L)!;
         var szamtech = new EszkozTipus { Id = SzamitastechnikaTipus, Nev = "Számítástechnika" };
@@ -62,14 +53,12 @@ public class LeltarGyar : SzerverGyar
         var kezdet = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         db.Elhelyezesek.AddRange(
             new Elhelyezes { Eszkoz = gep, Helyiseg = terem, ErvenyesTol = kezdet },
-            // A monitor korábban a 101-ben volt, ma a 102-ben: a szűrő csak az aktuális helyet nézi.
             new Elhelyezes { Eszkoz = monitor, Helyiseg = terem, ErvenyesTol = kezdet, ErvenyesIg = kezdet.AddMonths(6) },
             new Elhelyezes { Eszkoz = monitor, Helyiseg = regiTerem, ErvenyesTol = kezdet.AddMonths(6) });
 
         var kovacs = new FelelosSzemely { Id = KovacsAnna, Nev = "Kovács Anna" };
         db.FelelosHozzarendelesek.Add(new FelelosHozzarendeles { Eszkoz = monitor, Felelos = kovacs, ErvenyesTol = kezdet });
 
-        // A rögzített azonosítójú entitásokat kifejezetten fel kell venni, különben az EF meglévőnek tekinti őket.
         db.AddRange(szamtech, monitorTipus, terem, regiTerem, kovacs);
         db.Leltarkorzetek.Find(GtkKorzet)!.SzervezetiEgyseg = Gtk;
 

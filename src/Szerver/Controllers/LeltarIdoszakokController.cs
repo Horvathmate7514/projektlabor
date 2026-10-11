@@ -34,7 +34,6 @@ public class LeltarIdoszakokController(LeltarIdoszakSzolgaltatas idoszakok) : Co
         return CreatedAtAction(nameof(Reszletek), new { id = idoszak.Id }, idoszak);
     }
 
-    /// <summary>Megnyitja az időszakot, és pillanatképet készít az elvárt állományról.</summary>
     [HttpPost("{id:long}/nyitas")]
     [Authorize(Roles = Jogosultsagok.LeltarKezeles)]
     [ProducesResponseType<LeltarIdoszakAdat>(StatusCodes.Status200OK)]

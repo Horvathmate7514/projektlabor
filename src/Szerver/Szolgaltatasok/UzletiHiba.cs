@@ -5,10 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeltarKezelo.Szerver.Szolgaltatasok;
 
-/// <summary>
-/// Üzleti szabály megsértése (pl. lezárt időszakba beolvasás). Az üzenet a felhasználónak szól, magyarul;
-/// az <see cref="UzletiHibaSzuro"/> Problem Details válasszá alakítja (D-018, D-029).
-/// </summary>
 public class UzletiHiba(int statusz, string uzenet) : Exception(uzenet)
 {
     public int Statusz { get; } = statusz;
@@ -19,10 +15,6 @@ public class UzletiHiba(int statusz, string uzenet) : Exception(uzenet)
     public static UzletiHiba Utkozes(string uzenet) => new(StatusCodes.Status409Conflict, uzenet);
 }
 
-/// <summary>
-/// MVC kivételszűrő: az üzleti hibát a controller szintjén Problem Details válasszá alakítja. Szűrőként (nem
-/// köztes rétegként) a várt 4xx eseteket nem naplózza szerverhibaként, és a válasz <c>traceId</c>-t is kap.
-/// </summary>
 public class UzletiHibaSzuro(ProblemDetailsFactory problemDetails) : IExceptionFilter
 {
     public void OnException(ExceptionContext context)
@@ -30,7 +22,6 @@ public class UzletiHibaSzuro(ProblemDetailsFactory problemDetails) : IExceptionF
         var (statusz, uzenet) = context.Exception switch
         {
             UzletiHiba h => (h.Statusz, h.Message),
-            // Egyidejű módosítás (RowVersion): valaki más közben megváltoztatta ugyanazt az adatot.
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
                 "Az adatot időközben más módosította. Frissítsd a nézetet, és próbáld újra."),
             _ => (0, ""),

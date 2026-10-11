@@ -7,10 +7,6 @@ using LeltarKezelo.Szerver.Szolgaltatasok;
 
 namespace LeltarKezelo.Szerver.Tesztek;
 
-/// <summary>
-/// A leltározás alapfunkciói (6. alkalom): időszak nyitása és lezárása, körzetválasztás, beolvasás bármely kóddal,
-/// a leolvasás minősítése és mentése, sztornó, demókód. Minden teszt saját leltáridőszakot nyit.
-/// </summary>
 public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
 {
     private async Task<long> NyitottIdoszakAsync()
@@ -37,8 +33,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
     private static Task<HttpResponseMessage> BeolvasasKeresAsync(HttpClient kliens, long idoszakId, BeolvasasKeres keres) =>
         kliens.PostAsJsonAsync(ApiUtvonalak.IdoszakLeolvasasai(idoszakId), keres);
 
-    // --- Minősítési szabályok (szolgáltatásszintű egységteszt) ---
-
     [Theory]
     [InlineData(false, false, 1, 0, 1, Minosites.Ok)]
     [InlineData(false, false, 1, 1, 1, Minosites.Ismetelt)]
@@ -52,8 +46,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
     public void Minosites_elsobbsegi_sorrendje(bool megszunt, bool masKorzet, int elvart, int eddig, int mennyiseg, Minosites vart) =>
         Assert.Equal(vart, BeolvasasSzolgaltatas.Minosit(megszunt, masKorzet, elvart, eddig, mennyiseg));
 
-    // --- Leltáridőszak ---
-
     [Fact]
     public async Task Nyitas_pillanatkepet_keszit_a_nem_megszunt_eszkozokrol()
     {
@@ -63,7 +55,7 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
         var idoszak = await felelos.GetFromJsonAsync<LeltarIdoszakAdat>($"{ApiUtvonalak.LeltarIdoszakok}/{id}");
 
         Assert.Equal(LeltarIdoszakStatusz.Nyitott, idoszak!.Statusz);
-        Assert.Equal(4, idoszak.ElvartTetelekSzama); // az 5 eszközből a selejtezett nem elvárt
+        Assert.Equal(4, idoszak.ElvartTetelekSzama);
     }
 
     [Fact]
@@ -114,8 +106,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
         Assert.All(nyitottak!, i => Assert.Equal(LeltarIdoszakStatusz.Nyitott, i.Statusz));
     }
 
-    // --- Körzetválasztás ---
-
     [Fact]
     public async Task Korzetvalaszto_jelzi_hol_leltarozhat_a_felhasznalo()
     {
@@ -139,8 +129,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
 
         Assert.Contains(tipusok!, t => t.Nev == "SAP szám");
     }
-
-    // --- Beolvasás és minősítés ---
 
     [Fact]
     public async Task Ervenyes_kod_OK_es_megmondja_melyik_kodtipus_illeszkedett()
@@ -172,7 +160,7 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
 
     [Theory]
     [InlineData("NINCS-ILYEN")]
-    [InlineData("REGI-0001")] // inaktivált kód: már nem azonosít eszközt
+    [InlineData("REGI-0001")]
     public async Task Ismeretlen_kod_is_rogzul(string kod)
     {
         var kliens = await gyar.BejelentkezettKliensAsync(LeltarGyar.Leltarozo);
@@ -216,7 +204,7 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
         Assert.Equal(Minosites.Ismetelt, masodik.Minosites);
         Assert.Equal(1, masodik.BeolvasottMennyiseg);
         Assert.NotNull(masodik.KorabbiBeolvasas);
-        Assert.NotEqual(elso.LeolvasasId, masodik.LeolvasasId); // az ismétlés is rögzül
+        Assert.NotEqual(elso.LeolvasasId, masodik.LeolvasasId);
     }
 
     [Fact]
@@ -257,8 +245,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
 
         Assert.Contains("\"minosites\":\"MasKorzet\"", json);
     }
-
-    // --- Hibás esetek ---
 
     [Theory]
     [InlineData("")]
@@ -330,8 +316,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
         Assert.Equal(HttpStatusCode.Conflict, sztorno.StatusCode);
     }
 
-    // --- Jogosultság ---
-
     [Fact]
     public async Task Leltarozo_csak_a_jogosult_korzeteben_olvashat_be()
     {
@@ -367,8 +351,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
         Assert.Equal(HttpStatusCode.Forbidden, valasz.StatusCode);
     }
 
-    // --- Sztornó ---
-
     [Fact]
     public async Task Sztornozott_leolvasas_nem_szamit_az_ujra_beolvasas_OK()
     {
@@ -385,7 +367,7 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
         Assert.Equal(Minosites.Ok, ujra.Minosites);
         Assert.Equal(2, lista!.Osszesen);
         Assert.True(lista.Elemek.Single(l => l.Id == elso.LeolvasasId).Sztornozva);
-        Assert.Equal(ujra.LeolvasasId, lista.Elemek[0].Id); // a legújabb elöl
+        Assert.Equal(ujra.LeolvasasId, lista.Elemek[0].Id);
     }
 
     [Fact]
@@ -424,8 +406,6 @@ public class LeltarozasTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
         Assert.Equal("MIK-01", Assert.Single(latott!.Elemek).AktivKorzetKod);
         Assert.Equal(2, mind!.Osszesen);
     }
-
-    // --- Szimuláció (olvasó nélküli bemutató) ---
 
     [Fact]
     public async Task Ervenyes_demokod_a_korzet_eszkozere_mutat()

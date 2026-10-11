@@ -7,29 +7,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeltarKezelo.Szerver.Szolgaltatasok;
 
-/// <summary>
-/// A leltározás alapfolyamata (UC-06): a beolvasott kód azonosítása bármely aktív eszközkód alapján, a leolvasás
-/// minősítése és rögzítése, valamint a sztornó (D-002, F-10 – F-15).
-/// </summary>
 public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosultsag, TimeProvider ido)
 {
-    /// <summary>Ugyanaz a szabály, mint az adatbázis <c>ErtekNorm</c> oszlopáé: szóközök le, nagybetű (D-012, F-08).</summary>
     public static string Normalizal(string? kod) => (kod ?? "").Trim().ToUpperInvariant();
 
-    /// <summary>
-    /// A minősítés szabályai, elsőbbségi sorrendben (D-027). Az <paramref name="eddigBeolvasott"/> a korábbi,
-    /// nem sztornózott és nem <c>ISMETELT</c> leolvasások mennyiségének összege (D-025).
-    /// </summary>
     public static Minosites Minosit(bool megszunt, bool masKorzet, int elvart, int eddigBeolvasott, int mennyiseg)
     {
         if (elvart == 1 && eddigBeolvasott >= 1)
-            return Minosites.Ismetelt; // F-12: egyedi eszköz nem számolható kétszer
+            return Minosites.Ismetelt;
         if (megszunt)
-            return Minosites.NemAktiv; // UC-06 6d: rögzítjük, a leltárfelelős dönt
+            return Minosites.NemAktiv;
         if (masKorzet)
-            return Minosites.MasKorzet; // F-14: megerősítés nélkül, jelölve
+            return Minosites.MasKorzet;
         if (eddigBeolvasott + mennyiseg > elvart)
-            return Minosites.Tobblet; // F-13: nem utasítjuk el
+            return Minosites.Tobblet;
         return Minosites.Ok;
     }
 
@@ -68,7 +59,6 @@ public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosul
             Idopont = ido.GetUtcNow().UtcDateTime,
         };
 
-        // Az aktív kódok normalizált értéke egyedi (szűrt egyedi index), így legfeljebb egy találat lehet (F-07).
         var talalat = await db.EszkozKodok.AsNoTracking()
             .Where(k => k.Aktiv && k.ErtekNorm == kod)
             .Select(k => new
@@ -89,15 +79,13 @@ public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosul
 
         if (talalat is null)
         {
-            leolvasas.Minosites = Minosites.IsmeretlenKod; // F-15: ez is rögzül, később kivizsgálható
+            leolvasas.Minosites = Minosites.IsmeretlenKod;
             await MentesAsync(leolvasas, ct);
             return new BeolvasasEredmeny(leolvasas.Id, Minosites.IsmeretlenKod,
                 $"Ismeretlen kód: {leolvasas.BeolvasottKod}. A leolvasás rögzítve, később kivizsgálható.",
                 null, null, 0, null);
         }
 
-        // Az elvárt körzet és mennyiség a nyitáskori pillanatképből jön (D-003); a nyitás után felvett eszköznél
-        // a jelenlegi törzsadatból.
         var elvart = await db.ElvartTetelek.AsNoTracking()
             .Where(t => t.LeltarIdoszakId == idoszakId && t.EszkozId == talalat.EszkozId)
             .Select(t => new { t.LeltarkorzetId, t.Leltarkorzet.Kod, t.Leltarkorzet.Nev, t.ElvartMennyiseg })
@@ -144,7 +132,6 @@ public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosul
             korabbi);
     }
 
-    /// <summary>Az időszak leolvasásai, a legújabb elöl. A leltározó csak a jogosult körzeteiben rögzítetteket látja.</summary>
     public async Task<LapozottLista<LeolvasasListaElem>> ListazasAsync(
         long idoszakId, LeolvasasSzuro szuro, ClaimsPrincipal felhasznalo, CancellationToken ct)
     {
@@ -193,7 +180,6 @@ public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosul
         return new LapozottLista<LeolvasasListaElem>(elemek, oldal, meret, osszesen);
     }
 
-    /// <summary>A leolvasás nem törölhető, csak indoklással sztornózható (F-11, UC-08).</summary>
     public async Task SztornoAsync(long leolvasasId, SztornoKeres keres, ClaimsPrincipal felhasznalo, CancellationToken ct)
     {
         var indoklas = keres.Indoklas?.Trim() ?? "";
@@ -220,10 +206,6 @@ public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosul
         await db.SaveChangesAsync(ct);
     }
 
-    /// <summary>
-    /// Tesztkód a vonalkódolvasó nélküli bemutatóhoz (UC-06 5c). Érvényes kódnál lehetőleg a körzet egy még be
-    /// nem olvasott eszközét adja; érvénytelennél olyan kódot, amely egyetlen eszközhöz sem tartozik.
-    /// </summary>
     public async Task<DemoKod> DemoKodAsync(long idoszakId, long? korzetId, bool ervenyes, CancellationToken ct)
     {
         if (!await db.LeltarIdoszakok.AnyAsync(i => i.Id == idoszakId, ct))

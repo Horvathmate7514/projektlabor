@@ -7,7 +7,6 @@ namespace LeltarKezelo.Szerver.Szolgaltatasok;
 
 public class TorzsadatSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosultsag)
 {
-    /// <summary>Az aktív leltárkörzetek a körzetválasztóhoz; a leltározó számára nem engedélyezettek is látszanak, jelölve.</summary>
     public async Task<IReadOnlyList<LeltarkorzetAdat>> LeltarkorzetekAsync(ClaimsPrincipal felhasznalo, CancellationToken ct)
     {
         var leltarozhato = await jogosultsag.LeltarozhatoKorzetekAsync(felhasznalo, ct);

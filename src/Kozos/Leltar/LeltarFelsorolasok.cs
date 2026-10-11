@@ -2,9 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace LeltarKezelo.Kozos.Leltar;
 
-// A felsorolások a JSON-ban névvel (pl. "MasKorzet") utaznak, nem sorszámmal: a kliens és a Swagger is olvasható
-// értéket kap, és egy új tag felvétele nem tolja el a meglévők jelentését (D-028).
-
 /// <summary>A szerver által egy beolvasáshoz rendelt minősítés (adatmodell v1, 3.2).</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<Minosites>))]
 public enum Minosites

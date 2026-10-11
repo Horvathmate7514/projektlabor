@@ -10,7 +10,6 @@ namespace LeltarKezelo.Szerver.Controllers;
 [Authorize(Roles = Jogosultsagok.Beolvasas)]
 public class LeolvasasokController(BeolvasasSzolgaltatas beolvasas) : ControllerBase
 {
-    /// <summary>Beolvasott kód rögzítése. Minden kód leolvasásként mentődik, a minősítést a válasz tartalmazza.</summary>
     [HttpPost("api/leltaridoszakok/{idoszakId:long}/leolvasasok")]
     [ProducesResponseType<BeolvasasEredmeny>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -27,7 +26,6 @@ public class LeolvasasokController(BeolvasasSzolgaltatas beolvasas) : Controller
         long idoszakId, [FromQuery] LeolvasasSzuro szuro, CancellationToken ct) =>
         beolvasas.ListazasAsync(idoszakId, szuro, User, ct);
 
-    /// <summary>Tesztkód vonalkódolvasó nélküli bemutatóhoz; a beolvasást ezután <c>Demo</c> beviteli móddal kell küldeni.</summary>
     [HttpGet("api/leltaridoszakok/{idoszakId:long}/demokod")]
     [ProducesResponseType<DemoKod>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

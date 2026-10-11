@@ -1,6 +1,5 @@
 namespace LeltarKezelo.Kozos.Leltar;
 
-/// <summary>Egy beolvasott kód a leltározó képernyőről. A minősítést mindig a szerver adja.</summary>
 public sealed record BeolvasasKeres(
     string Kod,
     long AktivKorzetId,
@@ -12,10 +11,6 @@ public sealed record BeolvasasKeres(
     public const int MaxMennyiseg = 10_000;
 }
 
-/// <summary>
-/// A beolvasás eredménye, amelyből a kliens a visszajelzést (szín, szöveg) készíti.
-/// A leolvasás minden minősítésnél rögzül, az ismeretlen kód is (F-15).
-/// </summary>
 public sealed record BeolvasasEredmeny(
     long LeolvasasId,
     Minosites Minosites,
@@ -63,5 +58,4 @@ public sealed record SztornoKeres(string Indoklas)
     public const int MaxHossz = 500;
 }
 
-/// <summary>Tesztkód a vonalkódolvasó nélküli bemutatóhoz (UC-06 5c).</summary>
 public sealed record DemoKod(string Kod, bool Ervenyes, long? EszkozId);

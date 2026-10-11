@@ -6,10 +6,6 @@ using LeltarKezelo.Kozos.Torzsadatok;
 
 namespace LeltarKezelo.Szerver.Tesztek;
 
-/// <summary>
-/// Törzsadat-végpontok, az eszközlista bővített szűrése és a szerepkör szerinti láthatóság
-/// (5. alkalom 4–6. feladat, jogosultsági mátrix).
-/// </summary>
 public class EszkozlistaSzuresTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
 {
     private async Task<LapozottLista<EszkozListaElem>> ListaAsync(string lekerdezes, string felhasznalo = LeltarGyar.Felelos)
@@ -17,8 +13,6 @@ public class EszkozlistaSzuresTesztek(LeltarGyar gyar) : IClassFixture<LeltarGya
         var kliens = await gyar.BejelentkezettKliensAsync(felhasznalo);
         return (await kliens.GetFromJsonAsync<LapozottLista<EszkozListaElem>>($"{ApiUtvonalak.Eszkozok}?{lekerdezes}"))!;
     }
-
-    // --- Törzsadatok ---
 
     [Fact]
     public async Task Torzsadatok_listazhatok()
@@ -44,8 +38,6 @@ public class EszkozlistaSzuresTesztek(LeltarGyar gyar) : IClassFixture<LeltarGya
         Assert.Equal(HttpStatusCode.Unauthorized, valasz.StatusCode);
     }
 
-    // --- Szűrés ---
-
     [Fact]
     public async Task Tipusszuro_az_altipusokat_is_tartalmazza()
     {
@@ -69,7 +61,7 @@ public class EszkozlistaSzuresTesztek(LeltarGyar gyar) : IClassFixture<LeltarGya
     {
         var lista = await ListaAsync($"helyisegId={LeltarGyar.Terem101}");
 
-        var eszkoz = Assert.Single(lista.Elemek); // a monitor csak korábban volt itt
+        var eszkoz = Assert.Single(lista.Elemek);
         Assert.Equal(1, eszkoz.Id);
         Assert.Equal("I 101", eszkoz.Helyiseg);
     }
@@ -95,8 +87,6 @@ public class EszkozlistaSzuresTesztek(LeltarGyar gyar) : IClassFixture<LeltarGya
         Assert.Empty(ures.Elemek);
         Assert.Equal(0, ures.Osszesen);
     }
-
-    // --- Láthatóság ---
 
     [Fact]
     public async Task Leltarfelelos_minden_eszkozt_lat()

@@ -6,33 +6,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeltarKezelo.Szerver.Szolgaltatasok;
 
-/// <summary>
-/// A jogosultsági mátrix (<c>04_alkalom/01_Szerver_PoC.md</c>, 4.1) szerepkör-csoportjai az
-/// <c>[Authorize(Roles = ...)]</c> jelöléshez. A körzetszintű korlátozást a szolgáltatások ellenőrzik.
-/// </summary>
 public static class Jogosultsagok
 {
-    /// <summary>Leltáridőszak nyitása, lezárása, más leolvasásának sztornózása.</summary>
     public const string LeltarKezeles = Szerepkorok.Admin + "," + Szerepkorok.Leltarfelelos;
 
-    /// <summary>Beolvasás rögzítése, saját leolvasás sztornózása (a leltározó csak a jogosult körzeteiben).</summary>
     public const string Beolvasas = Szerepkorok.Admin + "," + Szerepkorok.Leltarfelelos + "," + Szerepkorok.Leltarozo;
 
     public static long FelhasznaloId(this ClaimsPrincipal felhasznalo) =>
         long.Parse(felhasznalo.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
 
-    /// <summary>Az adminisztrátor és a leltárfelelős minden körzetben dolgozhat, a leltározó csak a kijelöltekben.</summary>
     public static bool MindenKorzetben(this ClaimsPrincipal felhasznalo) =>
         felhasznalo.IsInRole(Szerepkorok.Admin) || felhasznalo.IsInRole(Szerepkorok.Leltarfelelos);
 }
 
-/// <summary>
-/// Leltárkörzet szintű jogosultság (jogosultsági mátrix): a leltározó csak a hozzá rendelt körzetekben dolgozhat és
-/// azokat látja, a megtekintő a saját szervezeti egységének körzeteit látja. Az admin és a leltárfelelős mindent.
-/// </summary>
 public class KorzetJogosultsag(LeltarDbContext db)
 {
-    /// <returns>A körzetek, amelyekben a felhasználó beolvashat; <c>null</c>, ha mindegyikben.</returns>
     public async Task<IReadOnlySet<long>?> LeltarozhatoKorzetekAsync(ClaimsPrincipal felhasznalo, CancellationToken ct)
     {
         if (felhasznalo.MindenKorzetben())
@@ -46,7 +34,6 @@ public class KorzetJogosultsag(LeltarDbContext db)
     public async Task<bool> LeltarozhatAsync(ClaimsPrincipal felhasznalo, long korzetId, CancellationToken ct) =>
         await LeltarozhatoKorzetekAsync(felhasznalo, ct) is not { } korzetek || korzetek.Contains(korzetId);
 
-    /// <returns>A körzetek, amelyek eszközeit a felhasználó láthatja; <c>null</c>, ha mindegyiket.</returns>
     public async Task<IReadOnlySet<long>?> LathatoKorzetekAsync(ClaimsPrincipal felhasznalo, CancellationToken ct)
     {
         if (felhasznalo.MindenKorzetben())

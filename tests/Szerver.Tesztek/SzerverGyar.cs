@@ -37,7 +37,6 @@ public class SzerverGyar : WebApplicationFactory<Program>
         });
     }
 
-    /// <summary>Bejelentkezik a megadott felhasználóval, és a tokent beállítja a kliens fejlécében.</summary>
     public async Task<HttpClient> BejelentkezettKliensAsync(string felhasznalonev = Felhasznalonev)
     {
         var kliens = CreateClient();
@@ -48,7 +47,6 @@ public class SzerverGyar : WebApplicationFactory<Program>
         return kliens;
     }
 
-    /// <summary>A tesztadatok felvétele; a mentést a hívó végzi, egyetlen lépésben.</summary>
     protected virtual void Feltoltes(LeltarDbContext db)
     {
         var sap = new KodTipus { Id = 1, Nev = "SAP szám" };
