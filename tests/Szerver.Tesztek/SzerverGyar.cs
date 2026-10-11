@@ -1,3 +1,6 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using LeltarKezelo.Kozos;
 using LeltarKezelo.Kozos.Auth;
 using LeltarKezelo.Szerver.Adat;
 using LeltarKezelo.Szerver.Adat.Entitasok;
@@ -32,7 +35,18 @@ public class SzerverGyar : WebApplicationFactory<Program>
         });
     }
 
-    private static void Feltoltes(LeltarDbContext db)
+    /// <summary>Bejelentkezik a megadott felhasználóval, és a tokent beállítja a kliens fejlécében.</summary>
+    public async Task<HttpClient> BejelentkezettKliensAsync(string felhasznalonev = Felhasznalonev)
+    {
+        var kliens = CreateClient();
+        var valasz = await kliens.PostAsJsonAsync(ApiUtvonalak.Bejelentkezes, new BejelentkezesKeres(felhasznalonev, Jelszo));
+        valasz.EnsureSuccessStatusCode();
+        var adat = await valasz.Content.ReadFromJsonAsync<BejelentkezesValasz>();
+        kliens.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adat!.Token);
+        return kliens;
+    }
+
+    protected virtual void Feltoltes(LeltarDbContext db)
     {
         var sap = new KodTipus { Id = 1, Nev = "SAP szám" };
         var leltari = new KodTipus { Id = 2, Nev = "Leltári szám 1" };
@@ -54,16 +68,16 @@ public class SzerverGyar : WebApplicationFactory<Program>
         db.SaveChanges();
     }
 
-    private static Felhasznalo Felhasznalo(string felhasznalonev, string nev, bool aktiv, Szerepkor szerepkor)
+    protected static Felhasznalo Felhasznalo(string felhasznalonev, string nev, bool aktiv, Szerepkor szerepkor)
     {
         var f = new Felhasznalo { Felhasznalonev = felhasznalonev, Nev = nev, Aktiv = aktiv, Szerepkorok = [szerepkor] };
         f.JelszoHash = new PasswordHasher<Felhasznalo>().HashPassword(f, Jelszo);
         return f;
     }
 
-    private static Eszkoz Eszkoz(long id, string nev, Leltarkorzet korzet, EszkozAllapot allapot, params EszkozKod[] kodok) =>
-        new() { Id = id, Megnevezes = nev, Leltarkorzet = korzet, EszkozAllapot = allapot, Kodok = kodok };
+    protected static Eszkoz Eszkoz(long id, string nev, Leltarkorzet korzet, EszkozAllapot allapot, params EszkozKod[] kodok) =>
+        new() { Id = id, Megnevezes = nev, Leltarkorzet = korzet, EszkozAllapot = allapot, Kodok = kodok.ToList() };
 
-    private static EszkozKod Kod(KodTipus tipus, string ertek) =>
+    protected static EszkozKod Kod(KodTipus tipus, string ertek) =>
         new() { KodTipus = tipus, Ertek = ertek, ErtekNorm = ertek.Trim().ToUpperInvariant() };
 }

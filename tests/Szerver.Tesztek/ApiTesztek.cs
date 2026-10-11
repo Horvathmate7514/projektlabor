@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using LeltarKezelo.Kozos;
 using LeltarKezelo.Kozos.Auth;
@@ -9,16 +8,7 @@ namespace LeltarKezelo.Szerver.Tesztek;
 
 public class ApiTesztek(SzerverGyar gyar) : IClassFixture<SzerverGyar>
 {
-    private async Task<HttpClient> BejelentkezettKliensAsync()
-    {
-        var kliens = gyar.CreateClient();
-        var valasz = await kliens.PostAsJsonAsync(ApiUtvonalak.Bejelentkezes,
-            new BejelentkezesKeres(SzerverGyar.Felhasznalonev, SzerverGyar.Jelszo));
-        valasz.EnsureSuccessStatusCode();
-        var adat = await valasz.Content.ReadFromJsonAsync<BejelentkezesValasz>();
-        kliens.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adat!.Token);
-        return kliens;
-    }
+    private Task<HttpClient> BejelentkezettKliensAsync() => gyar.BejelentkezettKliensAsync();
 
     [Fact]
     public async Task Allapot_bejelentkezes_nelkul_elerheto()
