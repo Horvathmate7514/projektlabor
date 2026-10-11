@@ -14,7 +14,11 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// A gépfüggő beállítások a környezeti változók és a parancssor ELŐTT töltődnek be, hogy azok felülírhassák őket (D-017).
+builder.Configuration
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .AddCommandLine(args);
 
 builder.Services.AddDbContext<LeltarDbContext>((sp, o) =>
 {
@@ -53,9 +57,13 @@ builder.Services.AddScoped<IPasswordHasher<Felhasznalo>, PasswordHasher<Felhaszn
 builder.Services.AddScoped<TokenKeszito>();
 builder.Services.AddScoped<AuthSzolgaltatas>();
 builder.Services.AddScoped<EszkozSzolgaltatas>();
+builder.Services.AddScoped<KorzetJogosultsag>();
+builder.Services.AddScoped<TorzsadatSzolgaltatas>();
+builder.Services.AddScoped<LeltarIdoszakSzolgaltatas>();
+builder.Services.AddScoped<BeolvasasSzolgaltatas>();
 
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers();
+builder.Services.AddControllers(o => o.Filters.Add<UzletiHibaSzuro>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(o =>
 {

@@ -1,6 +1,12 @@
+using System.Text.Json.Serialization;
+
 namespace LeltarKezelo.Kozos.Leltar;
 
+// A felsorolások a JSON-ban névvel (pl. "MasKorzet") utaznak, nem sorszámmal: a kliens és a Swagger is olvasható
+// értéket kap, és egy új tag felvétele nem tolja el a meglévők jelentését (D-028).
+
 /// <summary>A szerver által egy beolvasáshoz rendelt minősítés (adatmodell v1, 3.2).</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<Minosites>))]
 public enum Minosites
 {
     Ok,
@@ -12,6 +18,7 @@ public enum Minosites
 }
 
 /// <summary>Hogyan került a kód a rendszerbe; a demó beolvasások így kiszűrhetők.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<BeviteliMod>))]
 public enum BeviteliMod
 {
     Olvaso,
@@ -21,12 +28,14 @@ public enum BeviteliMod
     Demo,
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<LeltarIdoszakTipus>))]
 public enum LeltarIdoszakTipus
 {
     Eves,
     Rendkivuli,
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<LeltarIdoszakStatusz>))]
 public enum LeltarIdoszakStatusz
 {
     Tervezett,
@@ -35,12 +44,14 @@ public enum LeltarIdoszakStatusz
 }
 
 /// <summary>Az elvárt tétel a nyitáskori pillanatképből vagy utólagos bővítésből származik (D-003).</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<ElvartTetelFelvitelOka>))]
 public enum ElvartTetelFelvitelOka
 {
     Pillanatkep,
     Utolagos,
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ElhelyezesForras>))]
 public enum ElhelyezesForras
 {
     Leltar,
@@ -48,12 +59,14 @@ public enum ElhelyezesForras
 }
 
 /// <summary>A kiegészítő meglétét közvetlenül ellenőrizték, vagy csak a fő eszköz alapján feltételezték (F-20).</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<KiegeszitoEllenorzesMod>))]
 public enum KiegeszitoEllenorzesMod
 {
     Kozvetlen,
     Feltetelezett,
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ImportStatusz>))]
 public enum ImportStatusz
 {
     Folyamatban,
