@@ -60,7 +60,7 @@ a bővítés naplózódik.
 
 ## D-004 – Kliens- és szervertechnológia: WPF + ASP.NET Core
 
-- **Állapot:** elfogadott a csapatban – oktatói jóváhagyásra vár · **Terület:** architektúra
+- **Állapot:** elfogadott – az oktató jóváhagyta · **Terület:** architektúra
 
 **Kontextus.** A kiírás asztali (nem webes) klienst és valódi kliens–szerver architektúrát ír elő.
 
@@ -147,7 +147,7 @@ ezt az importáláskor egyértelmű hibaüzenettel jelezzük.
 
 ## D-009 – Kiegészítő funkció és könyvtárai
 
-- **Állapot:** javasolt – oktatói jóváhagyásra vár · **Terület:** kiegészítő funkció
+- **Állapot:** elfogadott – az oktató jóváhagyta · **Terület:** kiegészítő funkció
 
 **Döntés.** Webkamerás vonalkód-beolvasás (**OpenCvSharp4** + **ZXing.Net**), valamint címke- és
 leltárjegyzőkönyv-generálás (**QuestPDF** + ZXing.Net rajzolás). Részletek:

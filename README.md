@@ -73,6 +73,7 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | Fájl | Mire való |
 |---|---|
 | [06_alkalom/01_Leltarozas_szerver.md](06_alkalom/01_Leltarozas_szerver.md) | Szerveroldal: leltáridőszak és leolvasás állapotai, a minősítés szabályai, hibás esetek, végpontok, jogosultság, tesztek |
+| [06_alkalom/02_Torzsadatok_szures_jogosultsag.md](06_alkalom/02_Torzsadatok_szures_jogosultsag.md) | Törzsadat-végpontok, eszközlista-szűrés (típus, állapot, hely, felelős), láthatóság szerepkör szerint |
 
 ## Forráskód
 
@@ -171,7 +172,8 @@ A GitHub Actions ugyanezt futtatja minden pushnál és pull requestnél (`.githu
 1. `POST /api/auth/login` a `KezdoAdmin` adataival (vagy egy demó felhasználóval) → a válaszban kapott `token`
    értékét másold ki.
 2. Jobb felül **Authorize** → illeszd be a tokent.
-3. `GET /api/eszkozok?kereses=...&oldal=1&oldalMeret=50` → lapozott eszközlista.
+3. `GET /api/eszkozok?kereses=...&eszkozTipusId=&eszkozAllapotId=&helyisegId=&felelosId=&oldal=1&oldalMeret=50` →
+   lapozott, szűrt eszközlista (a szűrők értékei: `/api/eszkoztipusok`, `/api/eszkozallapotok`, `/api/helyisegek`, `/api/felelosok`).
 4. `GET /api/leltaridoszakok?statusz=Nyitott` → nyitott leltáridőszakok; `GET /api/leltarkorzetek` → körzetek.
 5. `POST /api/leltaridoszakok/{id}/leolvasasok` `{ "kod": "...", "aktivKorzetId": 1 }` → a beolvasás minősítése.
    Olvasó nélkül tesztkód: `GET /api/leltaridoszakok/{id}/demokod?leltarkorzetId=1`.

@@ -23,7 +23,7 @@ Ez a dokumentum pótolja a 3. alkalomról elmaradt **leltározási folyamat terv
 | Többféle eszközkód | Azonosítás bármely aktív kód alapján, normalizálva (D-012); a válasz megmondja, melyik kódtípus illeszkedett |
 | Leolvasás mentése | `Leolvasas` esemény időszakkal, körzettel, felhasználóval, időbélyeggel, beviteli móddal (D-002) |
 | *(előre a 7. alkalomra)* | Ismételt beolvasás, többlet, más körzet minősítése; sztornó indoklással; leolvasásnapló |
-| *(az 5. alkalomról)* | Szerepkör szerinti korlátozás és körzetszintű jogosultság az új végpontokon; kódtípus-lista |
+| *(az 5. alkalomról)* | Törzsadat-végpontok, eszközlista-szűrés, láthatóság szerepkör szerint – lásd [02_Torzsadatok_szures_jogosultsag.md](02_Torzsadatok_szures_jogosultsag.md) |
 
 ## 2. A leltáridőszak állapotai
 
@@ -264,7 +264,7 @@ leltáridőszakot nyit, így a tesztek nem zavarják egymást.
 | Sztornó | újrabeolvasás sztornó után, a sztornó szabályai (5 eset egy tesztben), leolvasásnapló láthatósága |
 | Szimuláció | érvényes és érvénytelen demókód |
 
-Eredmény: **74/74 sikeres** (a korábbi 34 és 40 új), a fordítás figyelmeztetés nélküli.
+Eredmény: a leltározási tesztek mind sikeresek; a teljes tesztkészlet **85/85**, a fordítás figyelmeztetés nélküli.
 
 **Kipróbálás SQL Serveren.** Az in-memory adatbázis nem ellenőrzi, hogy a lekérdezések lefordíthatók-e SQL-re,
 ezért a szervert a `db/demoadatok.sql` adataival feltöltött SQL Server Express adatbázison is végigpróbáltuk: időszak
