@@ -74,6 +74,8 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 |---|---|
 | [06_alkalom/01_Leltarozas_szerver.md](06_alkalom/01_Leltarozas_szerver.md) | Szerveroldal: leltáridőszak és leolvasás állapotai, a minősítés szabályai, hibás esetek, végpontok, jogosultság, tesztek |
 | [06_alkalom/02_Torzsadatok_szures_jogosultsag.md](06_alkalom/02_Torzsadatok_szures_jogosultsag.md) | Törzsadat-végpontok, eszközlista-szűrés (típus, állapot, hely, felelős), láthatóság szerepkör szerint |
+| [06_alkalom/03_Excel_import.md](06_alkalom/03_Excel_import.md) | Excel-import (az 5. alkalom pótlása): fejlécfelismerés, ellenőrzési szabályok, ismételt import, próbafuttatás, tesztek |
+| [db/minta/](db/minta/) | Excel-mintafájlok az importhoz: egy helyes és egy szándékosan hibás |
 
 ## Forráskód
 
@@ -91,7 +93,7 @@ LeltarKezelo.sln
 │   └── Kozos/      A kliens és a szerver közös típusai (DTO-k, felsorolások), API-útvonalak
 ├── tests/
 │   └── Szerver.Tesztek/   A szerver API integrációs tesztjei és az adatmodell tesztjei (xUnit)
-├── db/             Demóadat-szkript, az adatbázis-megszorítások ellenőrzése
+├── db/             Demóadat-szkript, az adatbázis-megszorítások ellenőrzése, Excel-mintafájlok (minta/)
 └── .github/workflows/     CI: fordítás és tesztek minden pushnál és pull requestnél
 ```
 
@@ -187,6 +189,7 @@ A GitHub Actions ugyanezt futtatja minden pushnál és pull requestnél (`.githu
 | Microsoft.AspNetCore.Authentication.JwtBearer | 8.0.11 | Szerver | JWT token ellenőrzése |
 | Microsoft.Extensions.Identity.Core | 8.0.11 | Szerver | Jelszó-hash (`PasswordHasher`, PBKDF2) |
 | Swashbuckle.AspNetCore | 6.6.2 | Szerver | OpenAPI leírás, Swagger UI |
+| ClosedXML | 0.105.1 | Szerver | Excel-import (és később az Excel-riportok), MIT licenc |
 | xUnit, Microsoft.AspNetCore.Mvc.Testing, EF Core InMemory | 2.5.3 / 8.0.11 | Tesztek | Integrációs tesztek |
 
 > A `.md` fájlokban lévő diagramok Mermaid formátumúak – GitHubon és VS Code-ban (Mermaid bővítménnyel) ábraként jelennek meg.

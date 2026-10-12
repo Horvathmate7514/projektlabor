@@ -60,6 +60,7 @@ builder.Services.AddScoped<KorzetJogosultsag>();
 builder.Services.AddScoped<TorzsadatSzolgaltatas>();
 builder.Services.AddScoped<LeltarIdoszakSzolgaltatas>();
 builder.Services.AddScoped<BeolvasasSzolgaltatas>();
+builder.Services.AddScoped<LeltarKezelo.Szerver.Szolgaltatasok.Import.ImportSzolgaltatas>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers(o => o.Filters.Add<UzletiHibaSzuro>());

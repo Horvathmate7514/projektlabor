@@ -498,3 +498,76 @@ ellopott, átadott) eszköz nem elvárt; ha mégis előkerül, `NEM_AKTIV` minő
 **Következmények.** A hiányzó eszközök listájában nem jelenik meg a leltár előtt selejtezett tétel (D-001). A nyitás
 után felvett eszköz a jelenlegi törzsadat alapján minősül; az elvárt tételek utólagos bővítése (`UTOLAGOS`) a 7. alkalom
 feladata.
+
+---
+
+## D-031 – Kétlépéses, állapot nélküli import
+
+- **Állapot:** elfogadott (6. alkalom, az 5. alkalom pótlása) · **Terület:** import
+
+**Kontextus.** Az importot jóváhagyás előtt próbafuttatással kell ellenőrizni (03_alkalom/04_Excel_lekepezes.md, 2. pont).
+
+**Alternatívák.** 1) A szerver eltárolja a feltöltött fájlt és az elemzést, a jóváhagyás erre hivatkozik.
+2) Állapot nélkül: a próbafuttatás csak eredményt ad, a jóváhagyáskor a kliens újra elküldi a fájlt, a szerver
+újra elemez, majd ír.
+
+**Döntés.** **2.** Nincs szerveroldali ideiglenes tárolás, lejárat és takarítás; a végrehajtás mindig a friss
+adatbázis-állapoton ellenőriz, így két felhasználó egyidejű munkája sem okoz elavult döntést.
+
+**Következmények.** A fájl kétszer utazik a hálózaton (néhány száz kB, elhanyagolható). Ha a két lépés között
+megváltozik az adatbázis, a végrehajtás eredménye eltérhet a próbafuttatástól – ezt a válasz tartalmazza.
+
+---
+
+## D-032 – Ismeretlen leltárkörzet: a sor elutasítása
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** import
+
+**Alternatívák.** 1) A sor elutasítása. 2) A körzet automatikus létrehozása. 3) A felhasználó dönt a próbafuttatás után.
+
+**Döntés.** **1.** Az ismeretlen vagy inaktív körzetű sor hibás; a körzetet előbb a törzsadatok között kell felvenni.
+A körzet kóddal és névvel is megadható.
+
+**Következmények.** Elgépelt körzetnévből nem keletkezik felesleges körzet. Az első betöltés előtt a körzeteket fel
+kell venni (a demóadatokban megvannak).
+
+---
+
+## D-033 – Ismételt import: mezőnkénti különbség, az üres cella nem töröl
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** import, történetiség
+
+**Alternatívák.** 1) A már létező SAP számú sor kihagyása. 2) Frissítés mezőnkénti különbséggel, jóváhagyás után.
+
+**Döntés.** **2.** A párosítás az SAP szám alapján történik (F-02). A próbafuttatás mezőnként mutatja a változást, a
+végrehajtás alkalmazza. Az Excel üres cellája nem töröl meglévő adatot. Kódcserénél a régi kód inaktív lesz, nem
+törlődik; felelősváltásnál a régi hozzárendelés lezárul (D-011). A frissítés kikapcsolható, ekkor csak új eszköz kerül be.
+
+**Következmények.** A forrásrendszer változásai követhetők anélkül, hogy adat veszne el; adat törléséhez a felületen
+kell módosítani. Az Excelből eltűnt eszközök csak listázódnak (F-03).
+
+---
+
+## D-034 – Ismeretlen eszköztípus és felelős az importban
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** import
+
+**Döntés.** A leképezési terv szerint: az ismeretlen eszköztípust az import **nem hozza létre** (figyelmeztetés, a
+típus üresen marad, a törzsadatok között vehető fel); az ismeretlen felelős személyt **létrehozza** (figyelmeztetéssel,
+egy névhez egyszer).
+
+**Indoklás.** A típus a szűrés és a riportok kategóriarendszere, ezért tudatos karbantartást igényel; a felelős
+személy viszont a forrásrendszer adata, amelynek hiánya az importot nem akaszthatja meg.
+
+---
+
+## D-035 – Az import naplózása és atomicitása
+
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** import
+
+**Döntés.** A végrehajtás minden változást egyetlen `SaveChanges` hívással ment, így az SQL Server egy tranzakcióban
+írja őket; ütközésnél semmi sem kerül be. A futás az `ImportFutas` táblába, a **hibák** az `ImportHiba` táblába
+kerülnek (sor, Excel-oszlop, üzenet, érték). A figyelmeztetéseket csak az eredmény tartalmazza.
+
+**Következmények.** Nincs szükség sémaváltozásra. Ha a figyelmeztetéseket is meg kell őrizni, az `ImportHiba` táblába
+súlyosság oszlop kerülhet (migráció).
