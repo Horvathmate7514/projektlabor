@@ -77,6 +77,8 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [06_alkalom/03_Excel_import.md](06_alkalom/03_Excel_import.md) | Excel-import (az 5. alkalom pótlása): fejlécfelismerés, ellenőrzési szabályok, ismételt import, próbafuttatás, végpontok és importnapló, tesztek |
 | [06_alkalom/04_Kliens.md](06_alkalom/04_Kliens.md) | WPF kliens: bejelentkezés, leltározó képernyő, eszközlista szűrőkkel, import képernyő, saját stílusok (D-016), képernyőképek |
 | [db/minta/](db/minta/) | Excel-mintafájlok az importhoz: egy helyes és egy szándékosan hibás |
+| [06_alkalom/Dokumentacio/](06_alkalom/Dokumentacio/) | Dokumentáció v0.5 (56 oldal): új 2.6 (a leltározás folyamata), 3.1 (GUI), 3.5 (Excel-import), 3.6 (a leltározás szerveroldala), 3.7 (a kliens megvalósítása) |
+| [06_alkalom/Prezentacio/](06_alkalom/Prezentacio/) | 10 perces prezentáció (15 dia) előadói jegyzetekkel, képernyőképekkel |
 
 ## Forráskód
 
