@@ -1,0 +1,37 @@
+<UserControl x:Class="Leltarkezelo.Client.Views.BejelentkezesNezet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Leltarkezelo.Client.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:BejelentkezesViewModel}"
+             Background="{StaticResource Oldalsav}">
+  <Grid>
+    <Border Style="{StaticResource Kartya}" Width="400" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="32">
+      <StackPanel>
+        <TextBlock Text="LELTÁRKEZELŐ" FontWeight="Bold" FontSize="20" Foreground="{StaticResource Elsodleges}"/>
+        <TextBlock Text="Jelentkezz be a folytatáshoz." Style="{StaticResource Halvany}" Margin="0,4,0,22"/>
+
+        <Border Background="{StaticResource ElsodlegesHalvany}" CornerRadius="6" Padding="10,8" Margin="4,0,4,12"
+                Visibility="{Binding Tajekoztatas, Converter={StaticResource Lathato}}">
+          <TextBlock Text="{Binding Tajekoztatas}" Foreground="{StaticResource Elsodleges}" TextWrapping="Wrap"/>
+        </Border>
+
+        <TextBlock Text="Felhasználónév" Style="{StaticResource Cimke}" Margin="4,0,4,0"/>
+        <TextBox x:Name="FelhasznalonevMezo" Text="{Binding Felhasznalonev, UpdateSourceTrigger=PropertyChanged}"/>
+        <TextBlock Text="Jelszó" Style="{StaticResource Cimke}" Margin="4,10,4,0"/>
+        <PasswordBox x:Name="JelszoMezo" PasswordChanged="JelszoValtozott"/>
+
+        <Border Style="{StaticResource HibaSav}" Margin="4,14,4,0"
+                Visibility="{Binding Hiba, Converter={StaticResource Lathato}}">
+          <TextBlock Text="{Binding Hiba}" Foreground="{StaticResource Veszely}" TextWrapping="Wrap"/>
+        </Border>
+
+        <Button Content="Bejelentkezés" Command="{Binding BelepesCommand}" IsDefault="True" Margin="4,18,4,4" Padding="14,9"/>
+        <TextBlock Style="{StaticResource Halvany}" FontSize="11" Margin="4,14,4,0">
+          <Run Text="Szerver:"/> <Run Text="{Binding SzerverCim, Mode=OneWay}"/>
+        </TextBlock>
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

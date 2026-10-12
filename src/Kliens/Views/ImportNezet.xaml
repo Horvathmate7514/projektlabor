@@ -1,0 +1,181 @@
+<UserControl x:Class="Leltarkezelo.Client.Views.ImportNezet"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Leltarkezelo.Client.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance vm:ImportViewModel}">
+  <UserControl.Resources>
+    <DataTemplate x:Key="AllapotCimke">
+      <Border CornerRadius="10" Padding="8,1" HorizontalAlignment="Left"
+              Background="{Binding Jelzes, Converter={StaticResource JelzesSzin}, ConverterParameter=Hatter}">
+        <TextBlock Text="{Binding Allapot}" FontWeight="SemiBold" FontSize="12"
+                   Foreground="{Binding Jelzes, Converter={StaticResource JelzesSzin}}"/>
+      </Border>
+    </DataTemplate>
+    <Style TargetType="Border" x:Key="Csempe" BasedOn="{StaticResource Kartya}">
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="Margin" Value="0,0,8,0"/>
+      <Setter Property="MinWidth" Value="0"/>
+    </Style>
+  </UserControl.Resources>
+
+  <Grid>
+    <!-- Nincs jogosultság -->
+    <Border Style="{StaticResource Kartya}" VerticalAlignment="Top" HorizontalAlignment="Left" MaxWidth="640"
+            Visibility="{Binding Engedelyezett, Converter={StaticResource Lathato}, ConverterParameter=Fordit}">
+      <TextBlock TextWrapping="Wrap"
+                 Text="Az Excel-importot csak Leltárfelelős vagy Admin szerepkörrel lehet használni (jogosultsági mátrix). Az eszközöket az Eszközök oldalon nézheted meg."/>
+    </Border>
+
+    <Grid Visibility="{Binding Engedelyezett, Converter={StaticResource Lathato}}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <!-- Fájl és beállítások -->
+      <Border Style="{StaticResource Kartya}" Padding="16,12">
+        <StackPanel>
+          <TextBlock Text="Excel forrásadatok importálása" Style="{StaticResource KartyaCim}" Margin="0"/>
+          <TextBlock Style="{StaticResource Halvany}" Margin="0,2,0,10"
+                     Text="Először próbafuttatás: a szerver ellenőrzi a fájlt, és megmutatja, mi történne – ekkor még semmi nem kerül az adatbázisba. Az importálás csak ezután, jóváhagyással indul."/>
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+              <Button Content="Próbafuttatás" Command="{Binding ProbafuttatasCommand}" Style="{StaticResource MasodlagosGomb}"/>
+              <Button Content="Importálás" Command="{Binding VegrehajtasCommand}"/>
+            </StackPanel>
+            <WrapPanel>
+              <StackPanel Width="420">
+                <TextBlock Text="Fájl (.xlsx)" Style="{StaticResource Cimke}" Margin="4,0"/>
+                <DockPanel>
+                  <Button DockPanel.Dock="Right" Content="Tallózás…" AutomationProperties.AutomationId="Tallozas" Command="{Binding TallozasCommand}" Style="{StaticResource MasodlagosGomb}"/>
+                  <TextBox x:Name="FajlMezo" Text="{Binding FajlUt, UpdateSourceTrigger=PropertyChanged}" ToolTip="Az .xlsx fájl elérési útja; a Tallózás gombbal is kiválasztható"/>
+                </DockPanel>
+              </StackPanel>
+              <StackPanel Width="170">
+                <TextBlock Text="Munkalap (nem kötelező)" Style="{StaticResource Cimke}" Margin="4,0"/>
+                <TextBox Text="{Binding Munkalap, UpdateSourceTrigger=PropertyChanged}" ToolTip="Üresen hagyva az első olyan munkalap, amelyen fejlécsor van"/>
+              </StackPanel>
+              <CheckBox Content="Meglévő eszközök frissítése" IsChecked="{Binding Frissitesek}" VerticalAlignment="Bottom" Margin="8,0,0,10"
+                        ToolTip="Ismételt importnál a már nyilvántartott eszközök (SAP szám alapján) módosításai is bekerülnek"/>
+            </WrapPanel>
+          </DockPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Row="1" Margin="0,12,0,0" CornerRadius="6" Padding="14,10" BorderThickness="4,1,1,1"
+              Background="{Binding EredmenyJelzes, Converter={StaticResource JelzesSzin}, ConverterParameter=Hatter}"
+              BorderBrush="{Binding EredmenyJelzes, Converter={StaticResource JelzesSzin}, ConverterParameter=Szegely}"
+              Visibility="{Binding Eredmeny, Converter={StaticResource Lathato}}">
+        <TextBlock Text="{Binding Eredmeny}" TextWrapping="Wrap" FontWeight="SemiBold"
+                   Foreground="{Binding EredmenyJelzes, Converter={StaticResource JelzesSzin}}"/>
+      </Border>
+
+      <Grid Grid.Row="2" Margin="0,12,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="400"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Próbafuttatás eredménye -->
+        <Border Style="{StaticResource Kartya}" Padding="14,12">
+          <Grid>
+            <TextBlock Style="{StaticResource Halvany}" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"
+                       Visibility="{Binding VanElemzes, Converter={StaticResource Lathato}, ConverterParameter=Fordit}"
+                       Text="Válassz egy .xlsx fájlt, majd indítsd a próbafuttatást.&#x0a;Mintafájlok a repóban: db/minta/forrasadatok_minta.xlsx és forrasadatok_hibas.xlsx"/>
+            <DockPanel Visibility="{Binding VanElemzes, Converter={StaticResource Lathato}}">
+              <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="A próbafuttatás eredménye" Style="{StaticResource KartyaCim}"/>
+                <UniformGrid Columns="5" Margin="0,0,0,10">
+                  <Border Style="{StaticResource Csempe}"><StackPanel><TextBlock Text="Új" Style="{StaticResource Cimke}"/><TextBlock Text="{Binding Elemzes.Osszesites.Uj}" Style="{StaticResource Szam}" Foreground="#027A48"/></StackPanel></Border>
+                  <Border Style="{StaticResource Csempe}"><StackPanel><TextBlock Text="Módosított" Style="{StaticResource Cimke}"/><TextBlock Text="{Binding Elemzes.Osszesites.Modositott}" Style="{StaticResource Szam}" Foreground="#175CD3"/></StackPanel></Border>
+                  <Border Style="{StaticResource Csempe}"><StackPanel><TextBlock Text="Változatlan" Style="{StaticResource Cimke}"/><TextBlock Text="{Binding Elemzes.Osszesites.Valtozatlan}" Style="{StaticResource Szam}"/></StackPanel></Border>
+                  <Border Style="{StaticResource Csempe}"><StackPanel><TextBlock Text="Hibás sor" Style="{StaticResource Cimke}"/><TextBlock Text="{Binding Elemzes.Osszesites.Hibas}" Style="{StaticResource Szam}" Foreground="#B42318"/></StackPanel></Border>
+                  <Border Style="{StaticResource Csempe}"><StackPanel><TextBlock Text="Figyelmeztetés" Style="{StaticResource Cimke}"/><TextBlock Text="{Binding Elemzes.Osszesites.Figyelmeztetesek}" Style="{StaticResource Szam}" Foreground="#5925DC"/></StackPanel></Border>
+                </UniformGrid>
+                <TextBlock Text="{Binding FejlecInfo}" Style="{StaticResource Halvany}" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding NemSzereplokInfo}" Style="{StaticResource Halvany}" Margin="0,0,0,4"
+                           Visibility="{Binding NemSzereplokInfo, Converter={StaticResource Lathato}}"/>
+                <CheckBox Content="Csak a módosított, hibás és figyelmeztetéses sorok" IsChecked="{Binding CsakElteresek}" Margin="0,6"/>
+              </StackPanel>
+              <DataGrid ItemsSource="{Binding Sorok}" RowHeight="NaN" MinRowHeight="30">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Sor" Binding="{Binding Sor}" Width="50"/>
+                  <DataGridTextColumn Header="SAP szám" Binding="{Binding SapSzam}" Width="95"/>
+                  <DataGridTextColumn Header="Megnevezés" Binding="{Binding Megnevezes}" Width="*"/>
+                  <DataGridTemplateColumn Header="Állapot" Width="105" CellTemplate="{StaticResource AllapotCimke}"/>
+                  <DataGridTextColumn Header="Változások, üzenetek" Binding="{Binding Reszletek}" Width="1.6*">
+                    <DataGridTextColumn.ElementStyle>
+                      <Style TargetType="TextBlock">
+                        <Setter Property="TextWrapping" Value="Wrap"/>
+                        <Setter Property="Margin" Value="0,4"/>
+                      </Style>
+                    </DataGridTextColumn.ElementStyle>
+                  </DataGridTextColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </DockPanel>
+          </Grid>
+        </Border>
+
+        <!-- Importnapló -->
+        <Border Grid.Column="1" Style="{StaticResource Kartya}" Margin="12,0,0,0" Padding="14,12">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="0.8*"/>
+            </Grid.RowDefinitions>
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="Frissítés" Command="{Binding NaploFrissiteseCommand}" Style="{StaticResource LinkGomb}"/>
+              <TextBlock Text="Importnapló" Style="{StaticResource KartyaCim}" Margin="0"/>
+            </DockPanel>
+            <DataGrid Grid.Row="1" ItemsSource="{Binding Futasok}" SelectedItem="{Binding KivalasztottFutas}" Margin="0,6,0,0">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Időpont" Binding="{Binding Ido}" Width="Auto"/>
+                <DataGridTextColumn Header="Fájl" Binding="{Binding Fajlnev}" Width="*"/>
+                <DataGridTemplateColumn Header="Státusz" Width="95">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <Border CornerRadius="10" Padding="8,1" HorizontalAlignment="Left"
+                              Background="{Binding Jelzes, Converter={StaticResource JelzesSzin}, ConverterParameter=Hatter}">
+                        <TextBlock Text="{Binding Statusz}" FontWeight="SemiBold" FontSize="12"
+                                   Foreground="{Binding Jelzes, Converter={StaticResource JelzesSzin}}"/>
+                      </Border>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Grid.Row="2" Margin="0,10,0,4" DataContext="{Binding KivalasztottFutas}"
+                        Visibility="{Binding Converter={StaticResource Lathato}}">
+              <TextBlock Text="{Binding Eredmeny}" FontWeight="SemiBold"/>
+              <TextBlock Style="{StaticResource Halvany}"><Run Text="Importálta:"/> <Run Text="{Binding Felhasznalo, Mode=OneWay}"/></TextBlock>
+            </StackPanel>
+            <DockPanel Grid.Row="3">
+              <Button DockPanel.Dock="Bottom" Content="Hibák letöltése Excelben" Command="{Binding HibakLetolteseCommand}"
+                      Style="{StaticResource MasodlagosGomb}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+              <DataGrid ItemsSource="{Binding FutasHibai}" RowHeight="NaN" MinRowHeight="28">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Sor" Binding="{Binding Sor}" Width="45"/>
+                  <DataGridTextColumn Header="Oszlop" Binding="{Binding Oszlop}" Width="95"/>
+                  <DataGridTextColumn Header="Hiba" Binding="{Binding Uzenet}" Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                      <Style TargetType="TextBlock">
+                        <Setter Property="TextWrapping" Value="Wrap"/>
+                        <Setter Property="Margin" Value="0,3"/>
+                      </Style>
+                    </DataGridTextColumn.ElementStyle>
+                  </DataGridTextColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </DockPanel>
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+  </Grid>
+</UserControl>

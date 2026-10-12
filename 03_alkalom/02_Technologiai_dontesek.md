@@ -16,7 +16,7 @@ A részletes indoklás, az alternatívák és a következmények a döntési nap
 | Hitelesítés | **Saját felhasználókezelés + JWT token** | D-015 |
 | Excel import és export | **ClosedXML** | D-008 |
 | Kiegészítő funkció | **OpenCvSharp4**, **ZXing.Net**, **QuestPDF** | D-009 |
-| WPF megjelenés, stíluskönyvtár | **Nyitott** – Bárkányi Máté dönt a képernyőtervekkel együtt | D-016 |
+| WPF megjelenés, stíluskönyvtár | **Saját stílusok** a látványterv színeivel (6. alkalom) | D-016 |
 
 ## A rendszer egy képben
 
@@ -48,4 +48,4 @@ flowchart LR
 | Megoldásstruktúra: `Kliens` (WPF), `Szerver` (ASP.NET Core), `Kozos` (DTO-k) | Horváth Máté | 4. alkalom |
 | Első EF Core migráció az adatmodell v1 alapján | Kiss Barnabás | 4. alkalom |
 | JWT beállítás: a titkos kulcs **nem** kerül a repóba (felhasználói titkok / környezeti változó) | Horváth Máté | 4. alkalom |
-| Stíluskönyvtár kiválasztása | Bárkányi Máté | a képernyőtervekkel együtt |
+| Stíluskönyvtár kiválasztása – kész: saját stílusok (D-016) | Bárkányi Máté | 6. alkalom |

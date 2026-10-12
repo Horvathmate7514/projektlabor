@@ -75,6 +75,7 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [06_alkalom/01_Leltarozas_szerver.md](06_alkalom/01_Leltarozas_szerver.md) | Szerveroldal: leltáridőszak és leolvasás állapotai, a minősítés szabályai, hibás esetek, végpontok, jogosultság, tesztek |
 | [06_alkalom/02_Torzsadatok_szures_jogosultsag.md](06_alkalom/02_Torzsadatok_szures_jogosultsag.md) | Törzsadat-végpontok, eszközlista-szűrés (típus, állapot, hely, felelős), láthatóság szerepkör szerint |
 | [06_alkalom/03_Excel_import.md](06_alkalom/03_Excel_import.md) | Excel-import (az 5. alkalom pótlása): fejlécfelismerés, ellenőrzési szabályok, ismételt import, próbafuttatás, végpontok és importnapló, tesztek |
+| [06_alkalom/04_Kliens.md](06_alkalom/04_Kliens.md) | WPF kliens: bejelentkezés, leltározó képernyő, eszközlista szűrőkkel, import képernyő, saját stílusok (D-016), képernyőképek |
 | [db/minta/](db/minta/) | Excel-mintafájlok az importhoz: egy helyes és egy szándékosan hibás |
 
 ## Forráskód
@@ -84,7 +85,11 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 ```
 LeltarKezelo.sln
 ├── src/
-│   ├── Kliens/     WPF asztali alkalmazás (net8.0-windows)
+│   ├── Kliens/     WPF asztali alkalmazás (net8.0-windows), MVVM
+│   │   ├── Views/             képernyők (XAML)
+│   │   ├── ViewModels/        nézetmodellek (CommunityToolkit.Mvvm)
+│   │   ├── Szolgaltatasok/    REST-kliens, munkamenet, párbeszédablakok
+│   │   └── Stilusok/          saját stílusok, színpaletta (D-016)
 │   ├── Szerver/    ASP.NET Core Web API (net8.0)
 │   │   ├── Controllers/       HTTP végpontok
 │   │   ├── Szolgaltatasok/    üzleti logika, hitelesítés
@@ -158,6 +163,10 @@ LeltarKezelo.sln
    dotnet run --project src/Kliens
    ```
 
+   A kliens a `src/Kliens/appsettings.json` `Szerver:Cim` értékén keresi a szervert (alapból `http://localhost:5000/`;
+   eltérő címhez `src/Kliens/appsettings.Local.json`, ez nem kerül a repóba). Belépés a `KezdoAdmin` vagy egy demó
+   felhasználó adataival. A képernyők leírása: [06_alkalom/04_Kliens.md](06_alkalom/04_Kliens.md).
+
 ### Tesztek
 
 ```bash
@@ -190,6 +199,8 @@ A GitHub Actions ugyanezt futtatja minden pushnál és pull requestnél (`.githu
 | Microsoft.Extensions.Identity.Core | 8.0.11 | Szerver | Jelszó-hash (`PasswordHasher`, PBKDF2) |
 | Swashbuckle.AspNetCore | 6.6.2 | Szerver | OpenAPI leírás, Swagger UI |
 | ClosedXML | 0.105.1 | Szerver | Excel-import (és később az Excel-riportok), MIT licenc |
+| CommunityToolkit.Mvvm | 8.3.2 | Kliens | MVVM: `[ObservableProperty]`, `[RelayCommand]` (D-014) |
+| Microsoft.Extensions.DependencyInjection, …Configuration.Json | 8.0.1 | Kliens | Függőséginjektálás, a szervercím beállítása (`appsettings.json`) |
 | xUnit, Microsoft.AspNetCore.Mvc.Testing, EF Core InMemory | 2.5.3 / 8.0.11 | Tesztek | Integrációs tesztek |
 
 > A `.md` fájlokban lévő diagramok Mermaid formátumúak – GitHubon és VS Code-ban (Mermaid bővítménnyel) ábraként jelennek meg.
