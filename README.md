@@ -74,7 +74,7 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 |---|---|
 | [06_alkalom/01_Leltarozas_szerver.md](06_alkalom/01_Leltarozas_szerver.md) | Szerveroldal: leltáridőszak és leolvasás állapotai, a minősítés szabályai, hibás esetek, végpontok, jogosultság, tesztek |
 | [06_alkalom/02_Torzsadatok_szures_jogosultsag.md](06_alkalom/02_Torzsadatok_szures_jogosultsag.md) | Törzsadat-végpontok, eszközlista-szűrés (típus, állapot, hely, felelős), láthatóság szerepkör szerint |
-| [06_alkalom/03_Excel_import.md](06_alkalom/03_Excel_import.md) | Excel-import (az 5. alkalom pótlása): fejlécfelismerés, ellenőrzési szabályok, ismételt import, próbafuttatás, tesztek |
+| [06_alkalom/03_Excel_import.md](06_alkalom/03_Excel_import.md) | Excel-import (az 5. alkalom pótlása): fejlécfelismerés, ellenőrzési szabályok, ismételt import, próbafuttatás, végpontok és importnapló, tesztek |
 | [db/minta/](db/minta/) | Excel-mintafájlok az importhoz: egy helyes és egy szándékosan hibás |
 
 ## Forráskód

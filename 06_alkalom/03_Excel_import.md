@@ -1,6 +1,6 @@
 # Excel-import: a forrásadatok betöltése
 
-**Felelős:** Kiss Barnabás · **Állapot:** a szolgáltatás és a tesztek elkészültek; a végpontok Horváth Máté feladata
+**Felelős:** Kiss Barnabás · **Állapot:** a szolgáltatás, a végpontok és a tesztek elkészültek; az import képernyő (kliens) még hiányzik
 
 Az 5. alkalom fő elvárása (*„Excel forrásállomány feldolgozása, adatimport”*) pótlása, a
 [`03_alkalom/04_Excel_lekepezes.md`](../03_alkalom/04_Excel_lekepezes.md) terve alapján. Döntések: D-031–D-035.
@@ -13,7 +13,9 @@ Az 5. alkalom fő elvárása (*„Excel forrásállomány feldolgozása, adatimp
 | Excel-olvasó | `src/Szerver/Szolgaltatasok/Import/ExcelOlvaso.cs` | Munkalap és fejlécsor felismerése, oszlop-hozzárendelés, cellák beolvasása (ClosedXML) |
 | Értelmezés | `.../Import/ImportErtekek.cs` | Fejlécnevek, kódok, pénzösszegek, dátumok értelmezése |
 | Import szolgáltatás | `.../Import/ImportSzolgaltatas.cs` | Ellenőrzés, összevetés az adatbázissal, próbafuttatás, végrehajtás, naplózás |
-| Tesztek | `tests/Szerver.Tesztek/ImportTesztek.cs` | 32 teszt |
+| Importnapló | `.../Import/ImportNaploSzolgaltatas.cs`, `src/Kozos/Import/ImportNaplo.cs` | Korábbi futások listája, egy futás hibái, a hibák Excelbe exportálása |
+| Végpontok | `src/Szerver/Controllers/ImportokController.cs` | Feltöltés, próbafuttatás, végrehajtás, importnapló (6. pont) |
+| Tesztek | `tests/Szerver.Tesztek/ImportTesztek.cs`, `ImportVegpontTesztek.cs` | 32 szolgáltatás- és 15 végponti teszt |
 | Mintafájlok | `db/minta/forrasadatok_minta.xlsx`, `forrasadatok_hibas.xlsx` | Kitalált tesztadatok a valódi forrásfájl megérkezéséig |
 
 ## 2. Az import menete
@@ -88,25 +90,40 @@ Ha egy sor SAP száma már szerepel az adatbázisban, a sor **módosított** vag
 - **Az Excelből eltűnt eszközök** nem törlődnek: az eredmény *„a forrásban nem szereplő”* listaként adja vissza őket
   (F-03), a döntés a leltárfelelősé.
 
-## 6. Használat a szerver végpontjaiból (Horváth Máté)
+## 6. Végpontok
 
-A szolgáltatás be van jegyezve a függőséginjektálásba (`Program.cs`). Egy lehetséges végpontpár:
+`src/Szerver/Controllers/ImportokController.cs` (eredetileg Horváth Máté feladata, végül Kiss Barnabás készítette el).
+Minden import-végpont **Admin** és **Leltárfelelős** szerepkörrel érhető el, ahogy a jogosultsági mátrix előírja.
+Más szerepkörre a válasz 403, bejelentkezés nélkül 401. Az útvonalak a kliens számára az `ApiUtvonalak`-ban,
+az űrlapmezők nevei az `ImportUrlap`-ban szerepelnek.
 
-```csharp
-[HttpPost("api/importok/probafuttatas")]   // multipart/form-data: fajl + beállítások
-public Task<ImportElemzes> Probafuttatas(IFormFile fajl, [FromForm] ImportBeallitasok? beallitasok, CancellationToken ct)
-    => import.ElemzesAsync(fajl.OpenReadStream(), fajl.FileName, beallitasok, ct);
+| Útvonal | Bemenet | Válasz |
+|---|---|---|
+| `POST /api/importok/probafuttatas` | `multipart/form-data` (lásd lent) | 200 `ImportElemzes` – nem ír az adatbázisba |
+| `POST /api/importok` | ugyanaz | 201 `ImportEredmeny`; a `Location` fejléc a futás naplójára mutat |
+| `GET /api/importok?statusz=&oldal=&oldalMeret=` | szűrés státuszra, lapozás (max. 200/oldal) | `LapozottLista<ImportFutasListaElem>`, legújabb elöl |
+| `GET /api/importok/{id}` | – | `ImportFutasReszletek` a hibákkal (sor, oszlop, üzenet, érték), vagy 404 |
+| `GET /api/importok/{id}/hibak.xlsx` | – | a futás hibái egy Excel-munkalapon (`importhibak_{id}.xlsx`), vagy 404 |
 
-[HttpPost("api/importok")]
-public Task<ImportEredmeny> Import(IFormFile fajl, [FromForm] ImportBeallitasok? beallitasok, CancellationToken ct)
-    => import.VegrehajtasAsync(fajl.OpenReadStream(), fajl.FileName, felhasznaloId, beallitasok, ct);
+**A feltöltés űrlapmezői:**
+
+| Mező | Kötelező | Tartalom |
+|---|---|---|
+| `fajl` | igen | az `.xlsx` fájl, legfeljebb 10 MB (és legfeljebb 20 000 adatsor) |
+| `munkalap` | nem | a munkalap neve |
+| `oszlopok` | nem | kézi oszlop-hozzárendelés JSON-ként, mező → Excel-fejléc, pl. `{"SapSzam": "Azonosító", "Megnevezes": "Tétel neve"}`; a mezőnevek az `ImportMezo` értékei, a kis- és nagybetű nem számít |
+| `frissitesek` | nem | `false` esetén csak az új eszközök kerülnek be (alapértelmezés: `true`) |
+
+**Hibák:** fájl nélkül, rossz formátumnál, hibás `oszlopok` JSON-nál, ismeretlen mezőnévnél vagy hiányzó kötelező
+oszlopnál a válasz 400 Problem Details, magyar nyelvű `detail` üzenettel. Ha végrehajtás közben ütközés történik
+(például ugyanazt a kódot közben máshol rögzítették), a válasz 409, és semmi sem kerül be.
+
+Példa (curl):
+
+```bash
+curl -X POST https://localhost:7080/api/importok/probafuttatas -H "Authorization: Bearer <token>" \
+     -F "fajl=@db/minta/forrasadatok_minta.xlsx" -F "frissitesek=true"
 ```
-
-- A hibás fájlnál (rossz formátum, hiányzó kötelező oszlop, nincs fejléc) a szolgáltatás `UzletiHiba`-t dob (400),
-  amelyet a meglévő kivételszűrő Problem Details válasszá alakít.
-- **Jogosultság:** a jogosultsági mátrix szerint Admin és Leltárfelelős.
-- **Fájlméret:** érdemes a végponton korlátozni. A szolgáltatás legfeljebb 20 000 adatsort fogad el.
-- Az importnapló lekérdezéséhez (`GET /api/importok/{id}`) az `ImportFutas` és az `ImportHiba` tábla adja az adatot.
 
 ## 7. Ellenőrzés
 
@@ -120,7 +137,13 @@ public Task<ImportEredmeny> Import(IFormFile fajl, [FromForm] ImportBeallitasok?
 | Törzsadatok | ismeretlen és inaktív körzet; körzet név alapján; ismeretlen típus, új felelős egyszer jön létre |
 | Értékek, fájl | pénzösszeg és dátum szövegből (8 formátum); rugalmas fejléc nem az első sorban; kézi oszlop-hozzárendelés; hiányzó kötelező oszlop; üres munkalap; régi `.xls` |
 
-Eredmény: a teljes tesztcsomag **117/117** sikeres.
+**Végponti tesztek** (`ImportVegpontTesztek`, 15 db, a teljes szerverrel, memóriabeli adatbázissal): a próbafuttatás
+nem ír; a végrehajtás 201-et ad, a futás a naplóban hibákkal együtt lekérdezhető és státuszra szűrhető; a hibák
+Excelben letölthetők; kikapcsolt frissítés; kézi oszlop-hozzárendelés és munkalapválasztás; hibás `oszlopok`
+(rossz JSON, ismeretlen mező, nem létező oszlop); fájl nélkül és nem `.xlsx` fájllal 400; leltározóként és
+megtekintőként 403; bejelentkezés nélkül 401; nem létező futás 404.
+
+Eredmény: a teljes tesztcsomag **132/132** sikeres.
 
 **SQL Serveren** (ideiglenes adatbázisban, a demóadatokkal – utána törölve):
 
@@ -131,6 +154,7 @@ Eredmény: a teljes tesztcsomag **117/117** sikeres.
 | `forrasadatok_hibas.xlsx` | 4 új, 6 hibás sor (mind a várt okból), 5 figyelmeztetés, 1 új felelős – részleges, 6 naplózott hiba |
 | Felelősváltás | a régi hozzárendelés lezárult, az új megnyílt, a szűrt egyedi index nem ütközött |
 | `db/ellenorzes.sql` az import után | 12/12 megfelelt |
+| Végpontok a futó szerveren (curl) | próbafuttatás és végrehajtás a fenti eredménnyel (201, `Location`); napló lista és részletek; hibák Excelben; leltározóval 403; fájl nélkül és ismeretlen mezővel 400; nem létező futás 404 |
 
 ## 8. Mintafájlok
 
@@ -143,7 +167,10 @@ Eredmény: a teljes tesztcsomag **117/117** sikeres.
 
 - **A valódi forrásfájl** még nem érkezett meg. Ha megjön, a fejlécnevek listáját (`ImportErtekek`) és a leképezést
   hozzá kell igazítani.
-- **Végpontok és kliens:** az import-végpontok (Horváth Máté) és az import képernyő (Bárkányi Máté) még hiányoznak.
+- **Kliens:** az import képernyő (Bárkányi Máté) még hiányzik: fájlválasztás, a próbafuttatás eredménye
+  (összesítés, soronkénti állapot és különbségek), jóváhagyás, importnapló, a hibák letöltése.
+- **A hibák exportja** csak a hibalistát tartalmazza (sor, oszlop, hiba, érték), az eredeti sorokat nem, mert a
+  feltöltött fájlt a szerver nem tárolja. A javítás így az eredeti fájlban történik, a sorszámok alapján.
 - **Importsablon mentése:** a terv szerint a kézi oszlop-hozzárendelés menthető lenne. Ehhez új tábla kellene,
   ezért egyelőre a kliens tárolhatja.
 - **A figyelmeztetések naplózása:** ha a figyelmeztetéseket is meg kell őrizni, az `ImportHiba` táblába súlyosság

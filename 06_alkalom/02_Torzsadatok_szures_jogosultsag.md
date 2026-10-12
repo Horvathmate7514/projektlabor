@@ -13,7 +13,7 @@ korlátozást és az eszközlista bővített szűrését. A leltározási folyam
 |---|---|---|
 | P1 | Leltározási folyamat terve | ✅ `01_Leltarozas_szerver.md`, 2–5. pont |
 | P2 | D-004: oktatói jóváhagyás rögzítése | ✅ `docs/dontesi_naplo.md` |
-| 3 | Import végpontok | ⏳ Az import szolgáltatásra épül (Kiss Barnabás); a végpontok annak elkészülte után kerülnek be |
+| 3 | Import végpontok | ✅ Kiss Barnabás készítette el az import szolgáltatással együtt – lásd [03_Excel_import.md](03_Excel_import.md), 6. pont |
 | 4 | Törzsadat-végpontok | ✅ körzetek, kódtípusok, eszköztípusok, állapotok, helyiségek, felelősök |
 | 5 | Szerepkör szerinti korlátozás | ✅ új végpontok szerepkör szerint, eszközlista és részletek körzet szerint |
 | 6 | Eszközlista szűrés bővítése | ✅ típus (altípusokkal), állapot, helyiség, felelős; hely és felelős oszlop |

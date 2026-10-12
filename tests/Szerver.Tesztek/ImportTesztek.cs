@@ -390,7 +390,7 @@ public class ImportTesztek
         return await new ImportSzolgaltatas(db, new RogzitettIdo(Most)).VegrehajtasAsync(fajl, "teszt.xlsx", Admin, beallitasok, default);
     }
 
-    private static MemoryStream Fajl(params object?[][] sorok)
+    internal static MemoryStream Fajl(params object?[][] sorok)
     {
         using var munkafuzet = new XLWorkbook();
         var lap = munkafuzet.AddWorksheet("Adatok");
