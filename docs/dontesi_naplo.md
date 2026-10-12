@@ -259,11 +259,23 @@ a mi feladatunk. Ha később egyetemi címtárhoz kellene kapcsolódni, a hitele
 
 ## D-016 – WPF megjelenés és stíluskönyvtár
 
-- **Állapot:** nyitott – döntés: Bárkányi Máté, a képernyőtervekkel együtt · **Terület:** kliens, GUI
+- **Állapot:** elfogadott (6. alkalom) · **Terület:** kliens, GUI
 
 **Alternatívák.** Saját stílusok · WPF-UI (Fluent) · MaterialDesignInXamlToolkit · MahApps.Metro.
 
 **Szempontok.** Vizuális igényesség, egységesség, a leltározó képernyő visszajelzési színeinek kezelése, függőség mérete.
+
+**Döntés.** **Saját stílusok**, külső stíluskönyvtár nélkül, a 4. alkalmi látványterv színeire építve. A paletta a
+`Stilusok/Szinek.xaml`, a vezérlők stílusa a `Stilusok/Vezerlok.xaml` fájlban van. A beolvasás visszajelzési színei
+(zöld, narancs, sárga, lila, piros) egy helyen, a `JelzesSzinKonverter`-ben vannak megadva.
+
+**Indoklás.** A látványterv már elkészült ezekkel a színekkel. A leltározó képernyő színes visszajelzései egy kész
+témakönyvtár színrendszerével nehezebben kezelhetők, mint saját erőforrásokkal. Nincs további függőség, és minden
+stílus megmagyarázható a bemutatón.
+
+**Következmények.** Az összetettebb vezérlők (pl. a legördülő lista) a Windows alapmegjelenését tartják meg. Ha később
+egységesebb, modernebb kinézet kell, a WPF-UI a stílusfájlok cseréjével bevezethető, a nézetek változtatása nélkül.
+Részletek: `06_alkalom/04_Kliens.md`, 4. pont.
 
 ---
 
