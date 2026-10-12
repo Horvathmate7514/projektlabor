@@ -11,14 +11,24 @@ namespace LeltarKezelo.Szerver.Adat;
 /// </summary>
 public static class KezdetiAdatok
 {
+    /// <summary>A kódtípusok rögzített azonosítói (D-022); az import is ezekre hivatkozik.</summary>
+    public static class KodTipusok
+    {
+        public const long SapSzam = 1;
+        public const long LeltariSzam1 = 2;
+        public const long LeltariSzam2 = 3;
+        public const long GyartasiSzam = 4;
+        public const long BelsoVonalkod = 5;
+    }
+
     public static void Feltoltes(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<KodTipus>().HasData(
-            new KodTipus { Id = 1, Nev = "SAP szám" },
-            new KodTipus { Id = 2, Nev = "Leltári szám 1" },
-            new KodTipus { Id = 3, Nev = "Leltári szám 2" },
-            new KodTipus { Id = 4, Nev = "Gyártási szám" },
-            new KodTipus { Id = 5, Nev = "Belső vonalkód" });
+            new KodTipus { Id = KodTipusok.SapSzam, Nev = "SAP szám" },
+            new KodTipus { Id = KodTipusok.LeltariSzam1, Nev = "Leltári szám 1" },
+            new KodTipus { Id = KodTipusok.LeltariSzam2, Nev = "Leltári szám 2" },
+            new KodTipus { Id = KodTipusok.GyartasiSzam, Nev = "Gyártási szám" },
+            new KodTipus { Id = KodTipusok.BelsoVonalkod, Nev = "Belső vonalkód" });
 
         modelBuilder.Entity<EszkozAllapot>().HasData(
             new EszkozAllapot { Id = 1, Nev = "aktív", Sorrend = 1 },

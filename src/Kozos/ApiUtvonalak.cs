@@ -14,10 +14,14 @@ public static class ApiUtvonalak
     public const string Felelosok = "api/felelosok";
     public const string LeltarIdoszakok = "api/leltaridoszakok";
     public const string Leolvasasok = "api/leolvasasok";
+    public const string Importok = "api/importok";
+    public const string ImportProbafuttatas = "api/importok/probafuttatas";
 
     public static string Nyitas(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/nyitas";
     public static string Lezaras(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/lezaras";
     public static string IdoszakLeolvasasai(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/leolvasasok";
     public static string Demokod(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/demokod";
     public static string Sztorno(long leolvasasId) => $"{Leolvasasok}/{leolvasasId}/sztorno";
+    public static string Import(long futasId) => $"{Importok}/{futasId}";
+    public static string ImportHibakExcel(long futasId) => $"{Importok}/{futasId}/hibak.xlsx";
 }

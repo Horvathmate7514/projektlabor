@@ -4,6 +4,7 @@ using System.Text;
 using LeltarKezelo.Szerver.Adat;
 using LeltarKezelo.Szerver.Adat.Entitasok;
 using LeltarKezelo.Szerver.Szolgaltatasok;
+using LeltarKezelo.Szerver.Szolgaltatasok.Import;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -60,6 +61,8 @@ builder.Services.AddScoped<KorzetJogosultsag>();
 builder.Services.AddScoped<TorzsadatSzolgaltatas>();
 builder.Services.AddScoped<LeltarIdoszakSzolgaltatas>();
 builder.Services.AddScoped<BeolvasasSzolgaltatas>();
+builder.Services.AddScoped<ImportSzolgaltatas>();
+builder.Services.AddScoped<ImportNaploSzolgaltatas>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers(o => o.Filters.Add<UzletiHibaSzuro>());

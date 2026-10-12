@@ -2,6 +2,9 @@
 
 **Felelős:** Kiss Barnabás · **Könyvtár:** ClosedXML (D-008) · **Állapot:** terv, a mintafájl alapján pontosítandó
 
+> **Megvalósítva (6. alkalom):** az import szolgáltatás e terv alapján elkészült – lásd
+> [`06_alkalom/03_Excel_import.md`](../06_alkalom/03_Excel_import.md) és D-031–D-035.
+
 > **Teendő:** a tényleges Excel mintafájlt még nem kaptuk meg. Az alábbi leképezés a feladatkiírásban említett
 > mezőkre épül (SAP szám, leltári szám 1–2, megnevezés, gyártási szám, érték). A fájl megérkezésekor a táblázatot
 > az oszlopok tényleges nevével és sorrendjével kell frissíteni. Kérdés az oktatóhoz: mikor kapjuk meg a mintafájlt?
