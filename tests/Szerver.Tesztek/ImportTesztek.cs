@@ -316,6 +316,83 @@ public class ImportTesztek
     public void Penzosszeg_szovegbol(string szoveg, double vart) =>
         Assert.Equal((decimal)vart, ImportErtekek.Penz(new ExcelErtek(szoveg, null, null, szoveg)));
 
+    [Theory]
+    [InlineData("30", 30, null)]
+    [InlineData("1 200", 1200, null)]
+    [InlineData("30,0", 30, null)]
+    [InlineData("30.00", 30, null)]
+    [InlineData("30 db", 30, "db")]
+    [InlineData("30 db.", 30, "db")]
+    [InlineData("12 szett", 12, "szett")]
+    [InlineData("1 200 pár", 1200, "pár")]
+    [InlineData("-3", -3, null)]
+    public void Mennyiseg_szovegbol(string szoveg, int vartDarab, string? vartEgyseg) =>
+        Assert.Equal(((int?)vartDarab, vartEgyseg), ImportErtekek.Mennyiseg(new ExcelErtek(szoveg, null, null, szoveg)));
+
+    [Theory]
+    [InlineData("2,5")]
+    [InlineData("1.000")]
+    [InlineData("1,000")]
+    [InlineData("sok")]
+    [InlineData("db")]
+    [InlineData("30 db 5")]
+    [InlineData("99999999999")]
+    public void Nem_ertelmezheto_mennyiseg(string szoveg) =>
+        Assert.Null(ImportErtekek.Mennyiseg(new ExcelErtek(szoveg, null, null, szoveg)).Darab);
+
+    [Fact]
+    public void Tort_szam_cella_nem_mennyiseg() =>
+        Assert.Null(ImportErtekek.Mennyiseg(new ExcelErtek("2,5", 2.5, null, "2,5")).Darab);
+
+    [Fact]
+    public async Task Mennyiseg_cellajaba_irt_egyseg_bekerul_de_az_egyseg_oszlop_erosebb()
+    {
+        var fajl = Fajl(["SAP szám", "Megnevezés", "Mennyiség", "Egység", "Leltárkörzet"],
+            ["41000001", "Székkészlet", "30 szett", null, "MIK-A"],
+            ["41000002", "Asztalkészlet", "15 szett", "garnitúra", "MIK-A"],
+            ["41000003", "Hosszabbító", 12, null, "MIK-A"]);
+
+        await Vegrehajtas(fajl);
+
+        await using var db = Kontextus();
+        var e = await db.Eszkozok.Where(x => x.Letrehozva == Most).ToDictionaryAsync(x => x.Megnevezes);
+        Assert.Equal((30, "szett"), (e["Székkészlet"].ElvartMennyiseg, e["Székkészlet"].MennyisegiEgyseg));
+        Assert.Equal((15, "garnitúra"), (e["Asztalkészlet"].ElvartMennyiseg, e["Asztalkészlet"].MennyisegiEgyseg));
+        Assert.Equal((12, (string?)null), (e["Hosszabbító"].ElvartMennyiseg, e["Hosszabbító"].MennyisegiEgyseg));
+    }
+
+    [Theory]
+    [InlineData("sok")]
+    [InlineData("0")]
+    [InlineData("2,5")]
+    public async Task Hibas_mennyiseg_nem_irja_felul_a_meglevo_eszkoz_darabszamat(string hibas)
+    {
+        object?[] fejlec = ["SAP szám", "Megnevezés", "Mennyiség", "Leltárkörzet"];
+        await Vegrehajtas(Fajl(fejlec, ["41000001", "Székkészlet", 30, "MIK-A"]));
+
+        var masodik = await Vegrehajtas(Fajl(fejlec, ["41000001", "Székkészlet", hibas, "MIK-A"]));
+
+        var sor = Assert.Single(masodik.Elemzes.Sorok);
+        Assert.Equal(ImportSorAllapot.Valtozatlan, sor.Allapot);
+        Assert.Contains(sor.Uzenetek, u => u.Mezo == ImportMezo.Mennyiseg && u.Sulyossag == UzenetSulyossag.Figyelmeztetes);
+        await using var db = Kontextus();
+        Assert.Equal(30, (await db.Eszkozok.SingleAsync(e => e.Megnevezes == "Székkészlet")).ElvartMennyiseg);
+    }
+
+    [Fact]
+    public async Task Megvaltozott_mennyiseg_mezonkenti_kulonbsegkent_jelenik_meg_es_frissul()
+    {
+        object?[] fejlec = ["SAP szám", "Megnevezés", "Mennyiség", "Leltárkörzet"];
+        await Vegrehajtas(Fajl(fejlec, ["41000001", "Székkészlet", 30, "MIK-A"]));
+
+        var masodik = await Vegrehajtas(Fajl(fejlec, ["41000001", "Székkészlet", "32 db", "MIK-A"]));
+
+        var sor = Assert.Single(masodik.Elemzes.Sorok);
+        Assert.Contains(new MezoValtozas(ImportMezo.Mennyiseg, "30", "32"), sor.Valtozasok);
+        await using var db = Kontextus();
+        Assert.Equal(32, (await db.Eszkozok.SingleAsync(e => e.Megnevezes == "Székkészlet")).ElvartMennyiseg);
+    }
+
     // ------------------------------------------------------------------ fájlszerkezet
 
     [Fact]

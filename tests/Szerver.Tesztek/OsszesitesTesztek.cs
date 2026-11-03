@@ -65,6 +65,42 @@ public class OsszesitesTesztek(LeltarGyar gyar) : IClassFixture<LeltarGyar>
     }
 
     [Fact]
+    public void Egyedi_eszkoz_ismetelt_leolvasasanak_mennyisege_nem_noveli_a_darabszamot()
+    {
+        var (beolvasott, sajat) = OsszesitesSzolgaltatas.Szamol(1, 1, [T(1, 1), T(1, 5, Minosites.Ismetelt)]);
+
+        Assert.Equal(1, beolvasott);
+        Assert.Equal(1, sajat);
+    }
+
+    [Fact]
+    public void Sztorno_utan_megmaradt_ismetles_mennyisegetol_fuggetlenul_egy_darab()
+    {
+        var (beolvasott, sajat) = OsszesitesSzolgaltatas.Szamol(1, 1, [T(1, 5, Minosites.Ismetelt)]);
+
+        Assert.Equal(1, beolvasott);
+        Assert.Equal(1, sajat);
+    }
+
+    [Fact]
+    public void Masik_korzetben_megmaradt_ismetles_nem_szamit_a_sajat_korzetbe()
+    {
+        var (beolvasott, sajat) = OsszesitesSzolgaltatas.Szamol(1, 1, [T(2, 5, Minosites.Ismetelt)]);
+
+        Assert.Equal(1, beolvasott);
+        Assert.Equal(0, sajat);
+    }
+
+    [Fact]
+    public void Egyedi_eszkoz_tobblet_leolvasasa_megtartja_a_mennyiseget()
+    {
+        var (beolvasott, sajat) = OsszesitesSzolgaltatas.Szamol(1, 1, [T(1, 2, Minosites.Tobblet)]);
+
+        Assert.Equal(2, beolvasott);
+        Assert.Equal(2, sajat);
+    }
+
+    [Fact]
     public void Mennyiseges_eszkoz_osszeadja_a_korzetenkenti_darabokat()
     {
         var (beolvasott, sajat) = OsszesitesSzolgaltatas.Szamol(30, 1, [T(1, 20), T(2, 5, Minosites.MasKorzet), T(1, 3)]);

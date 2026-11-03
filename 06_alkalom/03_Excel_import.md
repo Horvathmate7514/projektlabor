@@ -62,8 +62,8 @@ A szerver nem tárol félkész importot: a kliens a próbafuttatás után a jóv
 | Gyártási szám | Nem kötelező; ütközésnél kimarad | figyelmeztetés |
 | Megnevezés | Kötelező, legfeljebb 200 karakter; a többszörös szóközök összevonódnak | **hiba** |
 | Leltárkörzet | Kötelező; kód vagy név alapján, csak aktív körzet | **hiba** – előbb fel kell venni a körzetet (D-032) |
-| Mennyiség | Pozitív egész | figyelmeztetés, az alapérték 1 |
-| Mennyiségi egység | Legfeljebb 20 karakter | figyelmeztetés, rövidül |
+| Mennyiség | Pozitív egész, szövegként is: *1 200*, *30,0*, *30 db*, *12 szett* (7. alkalom, D-040) | figyelmeztetés; új eszköznél az alapérték 1, meglévőnél a régi darabszám marad |
+| Mennyiségi egység | Legfeljebb 20 karakter; az *Egység* oszlop erősebb, mint a mennyiség cellájába írt egység | figyelmeztetés, rövidül |
 | Érték | Szám vagy szöveg: *12 500*, *12.500,50*, *12 500 Ft*, *12.500,-Ft*; nem negatív | figyelmeztetés, üresen marad |
 | Beszerzés dátuma | Excel-dátum vagy szöveg: *2021.03.15.*, *2021-03-15*; nem jövőbeli | figyelmeztetés, üresen marad |
 | Eszköztípus | Név alapján, csak aktív | figyelmeztetés, üresen marad – új típust az import nem hoz létre (D-034) |

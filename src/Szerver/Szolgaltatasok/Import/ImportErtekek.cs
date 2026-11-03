@@ -54,12 +54,24 @@ public static partial class ImportErtekek
     /// <summary>Szóközök levágása és a többszörös szóközök összevonása.</summary>
     public static string Tisztitott(string szoveg) => TobbSzokoz().Replace(szoveg.Trim(), " ");
 
-    public static int? Egesz(ExcelErtek ertek)
+    /// <summary>
+    /// Mennyiség számként vagy szövegként, a cellába írt egységgel együtt: „30”, „1 200”, „30,0”, „30 db”, „12 szett”.
+    /// Az „1.000” alak nem értelmezhető egyértelműen (ezer vagy egy), ezért nem mennyiség; a törtszám sem az.
+    /// </summary>
+    public static (int? Darab, string? Egyseg) Mennyiseg(ExcelErtek ertek)
     {
         if (ertek.Szam is { } d)
-            return d == Math.Floor(d) && d is >= int.MinValue and <= int.MaxValue ? (int)d : null;
-        var s = Regex.Replace(ertek.Szoveg, @"\s|db\.?$", "", RegexOptions.IgnoreCase);
-        return int.TryParse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var i) ? i : null;
+            return (d == Math.Floor(d) && d is >= int.MinValue and <= int.MaxValue ? (int)d : null, null);
+
+        var talalat = MennyisegSzoveg().Match(ertek.Szoveg.Trim());
+        if (!talalat.Success)
+            return (null, null);
+
+        var szam = Regex.Replace(talalat.Groups["szam"].Value, @"\s", "");
+        var egyseg = talalat.Groups["egyseg"].Value.TrimEnd('.');
+        return int.TryParse(szam, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var i)
+            ? (i, egyseg.Length > 0 ? egyseg : null)
+            : (null, null);
     }
 
     /// <summary>Pénzösszeg számként vagy szövegként: „12 500”, „12.500,50”, „12,500.50”, „12 500 Ft”, „12.500,-Ft”.</summary>
@@ -106,6 +118,9 @@ public static partial class ImportErtekek
 
     [GeneratedRegex(@"\s{2,}")]
     private static partial Regex TobbSzokoz();
+
+    [GeneratedRegex(@"^(?<szam>-?\d[\d\s]*?)(?:[.,]0{1,2})?\s*(?<egyseg>\p{L}[\p{L}.]*)?$")]
+    private static partial Regex MennyisegSzoveg();
 
     [GeneratedRegex(@"^-?\d{1,3}(\.\d{3})+$")]
     private static partial Regex EzresPont();

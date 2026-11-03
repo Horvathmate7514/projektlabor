@@ -19,9 +19,9 @@ public class OsszesitesSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosu
     {
         if (elvart == 1)
         {
-            var beolvasott = talalatok.Select(t => t.Mennyiseg).DefaultIfEmpty(0).Max();
-            var sajat = talalatok.Where(t => t.KorzetId == elvartKorzetId).Select(t => t.Mennyiseg).DefaultIfEmpty(0).Max();
-            return (beolvasott, sajat);
+            static int Darab(IEnumerable<Talalat> t) =>
+                t.Select(x => x.Minosites == Minosites.Ismetelt ? 1 : x.Mennyiseg).DefaultIfEmpty(0).Max();
+            return (Darab(talalatok), Darab(talalatok.Where(t => t.KorzetId == elvartKorzetId)));
         }
 
         var szamitott = talalatok.Where(t => t.Minosites != Minosites.Ismetelt).ToList();
@@ -157,7 +157,7 @@ public class OsszesitesSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosu
             .Distinct().ToList();
         var eszkozok = await db.Eszkozok.AsNoTracking()
             .Where(e => eszkozIdk.Contains(e.Id))
-            .Select(e => new { e.Id, e.Megnevezes, e.MennyisegiEgyseg })
+            .Select(e => new { e.Id, e.Megnevezes, e.MennyisegiEgyseg, e.ElvartMennyiseg })
             .ToDictionaryAsync(e => e.Id, ct);
 
         var eszkozOlvasasai = olvasasok.Where(o => o.EszkozId is not null).ToLookup(o => o.EszkozId!.Value);
@@ -170,7 +170,7 @@ public class OsszesitesSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosu
             elvartak.TryGetValue(eszkozId, out var elvart);
             var elvartMennyiseg = elvart?.Mennyiseg ?? 0;
 
-            var (beolvasott, sajat) = Szamol(elvartMennyiseg, elvart?.KorzetId,
+            var (beolvasott, sajat) = Szamol(elvart?.Mennyiseg ?? e.ElvartMennyiseg, elvart?.KorzetId,
                 sajatOlvasasok.Select(o => new Talalat(o.KorzetId, o.Mennyiseg, o.Minosites)).ToList());
             var talaltKorzetek = sajatOlvasasok.Select(o => o.KorzetKod).Distinct().Order().ToList();
 
