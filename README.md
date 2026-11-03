@@ -79,6 +79,11 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [db/minta/](db/minta/) | Excel-mintafájlok az importhoz: egy helyes és egy szándékosan hibás |
 | [06_alkalom/Dokumentacio/](06_alkalom/Dokumentacio/) | Dokumentáció v0.5 (56 oldal): új 2.6 (a leltározás folyamata), 3.1 (GUI), 3.5 (Excel-import), 3.6 (a leltározás szerveroldala), 3.7 (a kliens megvalósítása) |
 | [06_alkalom/Prezentacio/](06_alkalom/Prezentacio/) | 10 perces prezentáció (15 dia) előadói jegyzetekkel, képernyőképekkel |
+### 7. alkalom – Mennyiségek, eltérő körzet
+
+| Fájl | Mire való |
+|---|---|
+| [07_alkalom/01_Mennyisegek_es_elteresek_szerver.md](07_alkalom/01_Mennyisegek_es_elteresek_szerver.md) | Szerveroldal: darabszám-számítás, tételállapotok (hiány, többlet, más körzet), körzetösszesítő, utólagos bővítés, tesztek |
 
 ## Forráskód
 

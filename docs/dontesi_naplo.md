@@ -583,3 +583,39 @@ kerülnek (sor, Excel-oszlop, üzenet, érték). A figyelmeztetéseket csak az e
 
 **Következmények.** Nincs szükség sémaváltozásra. Ha a figyelmeztetéseket is meg kell őrizni, az `ImportHiba` táblába
 súlyosság oszlop kerülhet (migráció).
+
+---
+
+## D-036 – A darabszám mindig a leolvasásokból számolódik
+
+- **Állapot:** elfogadott (7. alkalom) · **Terület:** leltárlogika
+
+**Kontextus.** A 6. alkalom után két nyitott kérdés maradt: a sztornózott első leolvasás után az `ISMETELT` sor nem
+lép a helyébe, és két egyidejű beolvasás egy egyedi eszközt kétszer is `OK`-nak minősíthet.
+
+**Alternatívák.** 1) Tárolt darabszám a tételen, sztornónál és beolvasásnál frissítve, zárolással. 2) Számított
+darabszám a nem sztornózott leolvasásokból; egyedi eszköznél a mennyiségek maximuma, mennyiségesnél a nem ismételt
+leolvasások összege.
+
+**Döntés.** **2.** Nincs tárolt, elcsúszható összeg; a sztornó azonnal érvényesül, és az egyedi eszköz darabszáma
+nem nőhet egy fölé párhuzamos beolvasástól.
+
+**Következmények.** Nincs sémaváltozás és nincs zárolás. A számítás egy mellékhatás nélküli függvény
+(`OsszesitesSzolgaltatas.Szamol`), egységteszt rögzíti. Nagy adatmennyiségnél SQL-oldali csoportosításra válthat.
+
+---
+
+## D-037 – A tétel állapota és a más körzet jelzése
+
+- **Állapot:** elfogadott (7. alkalom) · **Terület:** leltárlogika
+
+**Döntés.** A tétel állapota: `NemElvart` → `Hianyzik` → `MasKorzetben` (ha a saját körzetben semmi nem került elő)
+→ `Reszleges` / `Rendben` / `Tobblet`. A más körzetben talált eszköz mindkét körzet összesítőjében megjelenik:
+az elvárt körzetben `MasKorzetben`, a megtaláló körzetben „más körzetből ide került” darabként; a tétel felsorolja
+a talált körzeteket. Egy tétel annak is látható, akinek a talált körzete látható.
+
+**Indoklás.** A D-027-tel összhangban az eltérő hely fontosabb, mint a darabszám; a leltározónak látnia kell a
+nála előkerült idegen eszközt is, különben nem tudná jelezni.
+
+**Következmények.** A 9. alkalom összehasonlító nézetei (megtalált, hiányzó, többlet, más körzet) a tétellista
+állapotszűrőjére épülnek. Részletek: `07_alkalom/01_Mennyisegek_es_elteresek_szerver.md`.
