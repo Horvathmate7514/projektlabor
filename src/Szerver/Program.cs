@@ -61,6 +61,7 @@ builder.Services.AddScoped<KorzetJogosultsag>();
 builder.Services.AddScoped<TorzsadatSzolgaltatas>();
 builder.Services.AddScoped<LeltarIdoszakSzolgaltatas>();
 builder.Services.AddScoped<BeolvasasSzolgaltatas>();
+builder.Services.AddScoped<OsszesitesSzolgaltatas>();
 builder.Services.AddScoped<ImportSzolgaltatas>();
 builder.Services.AddScoped<ImportNaploSzolgaltatas>();
 

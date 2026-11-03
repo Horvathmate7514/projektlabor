@@ -21,6 +21,9 @@ public static class ApiUtvonalak
     public static string Lezaras(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/lezaras";
     public static string IdoszakLeolvasasai(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/leolvasasok";
     public static string Demokod(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/demokod";
+    public static string Osszesites(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/osszesites";
+    public static string Tetelek(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/tetelek";
+    public static string ElvartTetelek(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/elvart-tetelek";
     public static string Sztorno(long leolvasasId) => $"{Leolvasasok}/{leolvasasId}/sztorno";
     public static string Import(long futasId) => $"{Importok}/{futasId}";
     public static string ImportHibakExcel(long futasId) => $"{Importok}/{futasId}/hibak.xlsx";
