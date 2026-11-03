@@ -76,7 +76,7 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [06_alkalom/02_Torzsadatok_szures_jogosultsag.md](06_alkalom/02_Torzsadatok_szures_jogosultsag.md) | Törzsadat-végpontok, eszközlista-szűrés (típus, állapot, hely, felelős), láthatóság szerepkör szerint |
 | [06_alkalom/03_Excel_import.md](06_alkalom/03_Excel_import.md) | Excel-import (az 5. alkalom pótlása): fejlécfelismerés, ellenőrzési szabályok, ismételt import, próbafuttatás, végpontok és importnapló, tesztek |
 | [06_alkalom/04_Kliens.md](06_alkalom/04_Kliens.md) | WPF kliens: bejelentkezés, leltározó képernyő, eszközlista szűrőkkel, import képernyő, saját stílusok (D-016), képernyőképek |
-| [db/minta/](db/minta/) | Excel-mintafájlok az importhoz: egy helyes és egy szándékosan hibás |
+| [db/minta/](db/minta/) | Excel-mintafájlok az importhoz: egy helyes és egy szándékosan hibás (a 7. alkalomtól egy mennyiségi is) |
 | [06_alkalom/Dokumentacio/](06_alkalom/Dokumentacio/) | Dokumentáció v0.5 (56 oldal): új 2.6 (a leltározás folyamata), 3.1 (GUI), 3.5 (Excel-import), 3.6 (a leltározás szerveroldala), 3.7 (a kliens megvalósítása) |
 | [06_alkalom/Prezentacio/](06_alkalom/Prezentacio/) | 10 perces prezentáció (15 dia) előadói jegyzetekkel, képernyőképekkel |
 ### 7. alkalom – Mennyiségek, eltérő körzet
@@ -84,6 +84,10 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | Fájl | Mire való |
 |---|---|
 | [07_alkalom/01_Mennyisegek_es_elteresek_szerver.md](07_alkalom/01_Mennyisegek_es_elteresek_szerver.md) | Szerveroldal: darabszám-számítás, tételállapotok (hiány, többlet, más körzet), körzetösszesítő, utólagos bővítés, tesztek |
+| [07_alkalom/02_Adat_es_minoseg.md](07_alkalom/02_Adat_es_minoseg.md) | Adat és minőség: demóadatok az eltérésekkel, független SQL-ellenőrzés, mennyiség az importban, tesztek, kódátnézés, teljesítménymérés |
+| [07_alkalom/Prezentacio/](07_alkalom/Prezentacio/) | 10 perces prezentáció (16 dia) előadói jegyzetekkel, képernyőképekkel |
+| [07_alkalom/Dokumentacio/](07_alkalom/Dokumentacio/) | Dokumentáció v0.6: új *4. Tesztelés és validáció* fejezet, 3.4.6, a 3.5 frissítése (Horváth Máté 7. alkalmi fejezete még nincs benne) |
+| [db/minta/forrasadatok_mennyisegek.xlsx](db/minta/forrasadatok_mennyisegek.xlsx) | Mintafájl a szöveges mennyiségekhez és az ismételt importhoz |
 
 ## Forráskód
 
@@ -184,6 +188,13 @@ A szerver tesztjei memóriabeli adatbázissal, a valódi HTTP-csővezetéken ker
 lefuttathatók. Az adatmodell tesztjei (`AdatmodellTesztek`) az SQL Server-specifikus szabályokat (szűrt indexek,
 számított oszlop, CHECK megszorítások, törlési szabályok) és azt ellenőrzik, hogy a migrációk naprakészek-e.
 A GitHub Actions ugyanezt futtatja minden pushnál és pull requestnél (`.github/workflows/ci.yml`).
+
+A `SqlServerTesztek` és a `SqlServerDarabszamTesztek` csak valódi SQL Serverrel fut, különben kimarad. Saját, ideiglenes
+adatbázist hoznak létre a migrációkkal és a demóadatokkal, majd a végén törlik (PowerShellben):
+
+```powershell
+$env:LELTAR_TESZT_SQLSERVER = "Server=localhost;Trusted_Connection=True;TrustServerCertificate=True"; dotnet test
+```
 
 ### Gyors próba Swaggerben
 

@@ -2,6 +2,10 @@
 
 **Felelős:** Kiss Barnabás · **Állapot:** a 4. alkalomra elkészült, SQL Serveren kipróbálva
 
+> **A 7. alkalomra bővült:** a demóadatok és az ellenőrző szkript mai tartalmát (321 leolvasás, 15 + 10 ellenőrzés,
+> körzetenkénti összehasonlítás) a [`07_alkalom/02_Adat_es_minoseg.md`](../07_alkalom/02_Adat_es_minoseg.md) írja le;
+> az alábbi számok a 4. alkalmi állapotot mutatják.
+
 A 4. alkalom adatbázis-feladatai (`03_alkalom/05_Fejlesztesi_utemterv.md`, 2., 7. és 9. pont) és a szerver PoC-ban
 jelzett átadás (`01_Szerver_PoC.md`, 8. pont): az első migráció, a további entitások, a kezdeti adatok, a
 tesztadat-feltöltő és a CI.

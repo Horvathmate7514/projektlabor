@@ -1,18 +1,21 @@
 /*
 ================================================================================
   Leltárkezelő – demó- és tesztadatok
-  Felelős: Kiss Barnabás · 4. alkalom
+  Felelős: Kiss Barnabás · 4. alkalom, a 7. alkalomra bővítve
 --------------------------------------------------------------------------------
   - Determinisztikus: nincs benne véletlenszám, minden érték az eszköz sorszámából
     számolódik, így minden futtatás ugyanazt az adatot adja (bemutató, tesztek).
   - CSAK fejlesztői vagy demó adatbázisba! Üres, frissen migrált adatbázist vár
     (`dotnet ef database update`), különben hibával leáll, és nem ír semmit.
   - Egyetlen tranzakcióban fut: hiba esetén semmi sem marad félkészen.
+  - A tárolt minősítések a szerver szabályait követik (D-027); a db/ellenorzes.sql
+    3. része visszajátssza és ellenőrzi őket.
 
   Tartalom: 5 felhasználó, 6 leltárkörzet, 20 eszköztípus, 38 helyiség,
   14 felelős személy, 240 eszköz kódokkal, kiegészítők, hely- és felelőstörténet,
   állapotváltozások, egy lezárt (2025) és egy nyitott (2026) leltáridőszak
-  leolvasásokkal, egy importfutás hibákkal.
+  leolvasásokkal, egy importfutás hibákkal. A nyitott leltárban minden tételállapot
+  és minősítés előfordul (hiány, többlet, részleges mennyiség, más körzet stb.).
 
   Demó felhasználók (szerepkör): admin (Admin), leltarfelelos (Leltarfelelos),
   leltarozo1, leltarozo2 (Leltarozo), megtekinto (Megtekinto).
@@ -172,10 +175,12 @@ INSERT @Minta VALUES
  (24, N'Vetítővászon, falra szerelhető',          20, 1,  48000, 0);
 
 -- Állapotok: 5 = selejtezett, 6 = elveszett, 2 = javítás alatt, 7 = ellopott, 1 = aktív
+-- A 238-as és a 240-es eszköz a 2026. évi leltár nyitása után került a nyilvántartásba (12. pont).
 CREATE TABLE #E (Id bigint PRIMARY KEY, T int, KorzetId bigint, Beszerzes date, Letrehozva datetime2(3), AllapotId bigint, Elvart int);
 INSERT #E (Id, T, KorzetId, Beszerzes, AllapotId, Elvart)
 SELECT n.n, (n.n - 1) % 24 + 1, ((n.n - 1) / 24) % 6 + 1,
-       CASE WHEN n.n > 228 THEN DATEADD(day, n.n - 228, CAST('2026-02-02' AS date))
+       CASE WHEN n.n IN (238, 240) THEN CAST('2026-10-05' AS date)
+            WHEN n.n > 228 THEN DATEADD(day, n.n - 228, CAST('2026-02-02' AS date))
             ELSE DATEADD(day, -((n.n * 53) % 2100), CAST('2025-09-01' AS date)) END,
        CASE WHEN n.n % 37 = 0 THEN 5 WHEN n.n % 53 = 0 THEN 6 WHEN n.n % 41 = 0 THEN 2 WHEN n.n = 199 THEN 7 ELSE 1 END,
        m.Elvart
@@ -300,15 +305,21 @@ SET IDENTITY_INSERT dbo.LeltarIdoszak OFF;
 INSERT dbo.ElvartTetel (LeltarIdoszakId, EszkozId, LeltarkorzetId, ElvartMennyiseg, FelvitelOka)
 SELECT 1, Id, KorzetId, Elvart, 'PILLANATKEP' FROM #E WHERE Beszerzes <= '2025-11-03'
 UNION ALL
-SELECT 2, Id, KorzetId, Elvart, 'PILLANATKEP' FROM #E WHERE AllapotId NOT IN (5, 6, 7);
+SELECT 2, Id, KorzetId, Elvart, 'PILLANATKEP' FROM #E WHERE AllapotId NOT IN (5, 6, 7) AND Beszerzes < '2026-09-21'
+UNION ALL
+-- A nyitás után felvett eszköz, amelyet a leltárfelelős utólag az elvárt tételek közé vett (D-003).
+-- A 240-es eszközt nem vette fel: az „nem elvárt” tételként jelenik meg.
+SELECT 2, Id, KorzetId, Elvart, 'UTOLAGOS' FROM #E WHERE Id = 238;
 
 --------------------------------------------------------------------------------
 -- 12. Leolvasások
 --   2025 (lezárt): hiányzó, részben megtalált, többlet, más körzetből előkerült, ismételt,
 --                  sztornózott és ismeretlen kódú beolvasások is vannak.
---   2026 (nyitott): a Mérnöki Kar A és B épülete nagyrészt kész, a többi körzet még nem kezdődött el.
+--   2026 (nyitott): a Mérnöki Kar A és B épülete nagyrészt kész, a többi körzet még nem kezdődött el;
+--                  minden tételállapotra és minősítésre van példa (7. alkalom, D-036, D-037).
 --   Az azonosítók: 2025 alap = eszköz Id, ismételt = 1000+, többlet = 2000+, sztornó = 3000+,
---                  ismeretlen = 3901+, 2026 alap = 5000+, 2026 egyedi esetek = 6000+
+--                  ismeretlen = 3901+, 2026 alap = 5000+, 2026 egyedi esetek = 6000+,
+--                  2026 mennyiségi és egyéb eltérések = 7000+, 2026 ismeretlen = 7101+
 --------------------------------------------------------------------------------
 CREATE TABLE #L (Id bigint PRIMARY KEY, IdoszakId bigint, EszkozId bigint NULL, KodId bigint NULL, Kod nvarchar(64),
                  KorzetId bigint, HelyisegId bigint NULL, Mennyiseg int, Minosites varchar(20), Mod varchar(20),
@@ -341,18 +352,22 @@ SELECT 1000 + l.Id, 1, l.EszkozId, l.KodId, l.Kod, l.KorzetId, l.HelyisegId, 1, 
 FROM #L l JOIN #E e ON e.Id = l.EszkozId
 WHERE l.IdoszakId = 1 AND l.Id < 1000 AND e.Elvart = 1 AND e.Id % 29 = 0;
 
--- 2025 – többlet mennyiséges tételeknél (az elvártnál több darab került elő)
+-- 2025 – többlet mennyiséges tételeknél (az elvártnál több darab került elő);
+--        más körzetben a más körzet minősítés az erősebb (D-027)
 INSERT #L
-SELECT 2000 + l.Id, 1, l.EszkozId, l.KodId, l.Kod, l.KorzetId, l.HelyisegId, 2, 'TOBBLET', l.Mod, l.FelhasznaloId,
+SELECT 2000 + l.Id, 1, l.EszkozId, l.KodId, l.Kod, l.KorzetId, l.HelyisegId, 2,
+       CASE WHEN l.Minosites = 'MAS_KORZET' THEN 'MAS_KORZET' ELSE 'TOBBLET' END, l.Mod, l.FelhasznaloId,
        DATEADD(minute, 1, l.Idopont), 0, NULL, NULL, NULL
 FROM #L l JOIN #E e ON e.Id = l.EszkozId
 WHERE l.IdoszakId = 1 AND l.Id < 1000 AND e.Elvart > 1 AND e.Id % 5 = 0;
 
--- 2025 – hibás beolvasás, amelyet a leltározó indoklással sztornózott (UC-08)
+-- 2025 – véletlen dupla beolvasás, amelyet a leltározó indoklással sztornózott (UC-08);
+--        a rendszer ezt egyedi eszköznél ismételtnek, mennyiségesnél többletnek minősítette (D-027)
 INSERT #L
-SELECT 3000 + l.Id, 1, l.EszkozId, l.KodId, l.Kod, l.KorzetId, l.HelyisegId, l.Mennyiseg, l.Minosites, l.Mod, l.FelhasznaloId,
+SELECT 3000 + l.Id, 1, l.EszkozId, l.KodId, l.Kod, l.KorzetId, l.HelyisegId, l.Mennyiseg,
+       CASE WHEN e.Elvart = 1 THEN 'ISMETELT' ELSE 'TOBBLET' END, l.Mod, l.FelhasznaloId,
        DATEADD(minute, 1, l.Idopont), 1, N'Véletlen dupla beolvasás.', DATEADD(minute, 3, l.Idopont), l.FelhasznaloId
-FROM #L l
+FROM #L l JOIN #E e ON e.Id = l.EszkozId
 WHERE l.IdoszakId = 1 AND l.Id < 1000 AND l.Id % 31 = 0;
 
 -- 2025 – ismeretlen kódok (nyilvántartáson kívüli vagy sérült címkék)
@@ -362,6 +377,43 @@ INSERT #L VALUES
  (3903, 1, NULL, NULL, N'L-2018-9999',   3, NULL, 1, 'ISMERETLEN_KOD', 'KEZI',   3, '2025-11-05T13:05:00', 0, NULL, NULL, NULL),
  (3904, 1, NULL, NULL, N'SN00000000',    4, NULL, 1, 'ISMERETLEN_KOD', 'OLVASO', 4, '2025-11-06T11:20:00', 0, NULL, NULL, NULL),
  (3905, 1, NULL, NULL, N'5998000123457', 5, NULL, 1, 'ISMERETLEN_KOD', 'OLVASO', 4, '2025-11-07T08:55:00', 0, NULL, NULL, NULL);
+
+-- 2026 – mennyiségi és egyéb eltérések. A megjegyzés a sorozat végén várt tételállapotot adja meg.
+DECLARE @Eset TABLE (Id bigint PRIMARY KEY, EszkozId bigint, Korzet bigint, Mennyiseg int, Minosites varchar(20),
+                     Mod varchar(20), Felhasznalo bigint, Idopont datetime2(3), SztornoIdopont datetime2(3) NULL);
+INSERT @Eset VALUES
+ -- 30 db-os székkészlet, két részletben 27 db → részleges, hiány: 3
+ (7001, 5,   1, 12, 'OK',         'OLVASO', 3, '2026-09-22T09:00:00', NULL),
+ (7002, 5,   1, 15, 'OK',         'OLVASO', 3, '2026-09-22T09:20:00', NULL),
+ -- 30 db-os székkészlet, két részletben 33 db → többlet: 3
+ (7003, 149, 1, 20, 'OK',         'OLVASO', 3, '2026-09-22T13:00:00', NULL),
+ (7004, 149, 1, 13, 'TOBBLET',    'OLVASO', 3, '2026-09-22T13:15:00', NULL),
+ -- 10 db-os multiméter-készlet, két részletben pontosan 10 db → rendben
+ (7005, 13,  1, 6,  'OK',         'OLVASO', 3, '2026-09-22T09:40:00', NULL),
+ (7006, 13,  1, 4,  'OK',         'KEZI',   3, '2026-09-22T09:50:00', NULL),
+ -- 30 db-os székkészlet, 30 db, majd véletlenül még 5, amelyet sztornóztak → rendben
+ (7007, 29,  2, 30, 'OK',         'OLVASO', 3, '2026-09-23T08:30:00', NULL),
+ (7008, 29,  2, 5,  'TOBBLET',    'OLVASO', 3, '2026-09-23T08:35:00', '2026-09-23T08:40:00'),
+ -- 15 db-os asztalkészlet: 9 db a saját körzetben, 4 db a MIK-A-ban → részleges, hiány: 2, két talált körzet
+ (7009, 31,  2, 9,  'OK',         'OLVASO', 3, '2026-09-23T09:10:00', NULL),
+ (7010, 31,  1, 4,  'MAS_KORZET', 'OLVASO', 3, '2026-09-23T09:30:00', NULL),
+ -- 15 db-os asztalkészlet, mind a 15 db a MIK-B-ben → más körzetben
+ (7011, 151, 2, 15, 'MAS_KORZET', 'OLVASO', 3, '2026-09-23T10:00:00', NULL),
+ -- 6 db-os tárgyalószék-készlet, 6 + 2 db → többlet: 2
+ (7012, 45,  2, 6,  'OK',         'OLVASO', 3, '2026-09-23T10:20:00', NULL),
+ (7013, 45,  2, 2,  'TOBBLET',    'KEZI',   3, '2026-09-23T10:25:00', NULL),
+ -- egyedi nyomtató 2-es mennyiséggel (elgépelés) → többlet: 1
+ (7014, 9,   1, 2,  'TOBBLET',    'KEZI',   3, '2026-09-22T09:55:00', NULL),
+ -- egyedi multiméter: előbb más körzetben, majd a sajátjában is beolvasták → rendben, két talált körzet
+ (7015, 12,  2, 1,  'MAS_KORZET', 'OLVASO', 3, '2026-09-23T10:40:00', NULL),
+ (7016, 12,  1, 1,  'ISMETELT',   'OLVASO', 3, '2026-09-23T11:00:00', NULL),
+ -- egyedi oktatói asztal véletlen dupla beolvasása → rendben, 1 db (D-025)
+ (7017, 6,   1, 1,  'ISMETELT',   'OLVASO', 3, '2026-09-22T08:13:00', NULL),
+ -- egyedi iratszekrény: az első leolvasást utólag sztornózták, az ismételt megmaradt → rendben (D-036)
+ (7018, 8,   1, 1,  'ISMETELT',   'OLVASO', 3, '2026-09-22T08:17:00', NULL),
+ -- a nyitás után felvett eszközök: a 238-as utólag elvárt → rendben; a 240-es nem elvárt tétel
+ (7019, 238, 4, 1,  'OK',         'OLVASO', 4, '2026-10-06T10:05:00', NULL),
+ (7020, 240, 4, 1,  'OK',         'OLVASO', 4, '2026-10-06T10:00:00', NULL);
 
 -- 2026 – folyamatban lévő leltár: MIK-A és MIK-B körzet, minden 7. eszköz még hiányzik
 INSERT #L
@@ -373,7 +425,32 @@ JOIN dbo.ElvartTetel t ON t.LeltarIdoszakId = 2 AND t.EszkozId = e.Id
 CROSS APPLY (SELECT TOP (1) ek.Id, ek.Ertek FROM dbo.EszkozKod ek
              WHERE ek.EszkozId = e.Id AND ek.Aktiv = 1 ORDER BY ek.KodTipusId) k
 LEFT JOIN #Hely h ON h.EszkozId = e.Id
-WHERE e.KorzetId IN (1, 2) AND e.Id % 7 <> 0;
+WHERE e.KorzetId IN (1, 2) AND e.Id % 7 <> 0
+  AND e.Id NOT IN (5, 149, 13, 29, 31, 151, 45, 9, 12);   -- ezek a fenti részletes sorozatokból kapják a leolvasásukat
+
+INSERT #L
+SELECT s.Id, 2, s.EszkozId, k.Id, k.Ertek, s.Korzet, CASE WHEN s.Korzet = e.KorzetId THEN h.HelyisegId END, s.Mennyiseg,
+       s.Minosites, s.Mod, s.Felhasznalo, s.Idopont,
+       CASE WHEN s.SztornoIdopont IS NULL THEN 0 ELSE 1 END,
+       CASE WHEN s.SztornoIdopont IS NULL THEN NULL ELSE N'Véletlenül kétszer számoltam.' END,
+       s.SztornoIdopont,
+       CASE WHEN s.SztornoIdopont IS NULL THEN NULL ELSE s.Felhasznalo END
+FROM @Eset s
+JOIN #E e ON e.Id = s.EszkozId
+CROSS APPLY (SELECT TOP (1) ek.Id, ek.Ertek FROM dbo.EszkozKod ek
+             WHERE ek.EszkozId = e.Id AND ek.Aktiv = 1 ORDER BY ek.KodTipusId) k
+LEFT JOIN #Hely h ON h.EszkozId = e.Id;
+
+-- A 8-as eszköz első leolvasása téves volt: sztornózták, de az ismételt sor megmaradt.
+UPDATE #L SET Sztornozva = 1, SztornoIndoklas = N'Téves helyiségben rögzítve.',
+              SztornoIdopont = '2026-09-22T08:20:00', SztornoztaId = 3
+WHERE Id = 5008;
+
+-- 2026 – ismeretlen kódok: címke nélküli eszköz, lecserélt régi címke (inaktív kód), demó beolvasás
+INSERT #L VALUES
+ (7101, 2, NULL, NULL, N'X-2026-0042', 1, NULL, 1, 'ISMERETLEN_KOD', 'OLVASO', 3, '2026-09-22T10:05:00', 0, NULL, NULL, NULL),
+ (7102, 2, NULL, NULL, N'L-REGI-25',   2, NULL, 1, 'ISMERETLEN_KOD', 'OLVASO', 3, '2026-09-23T11:20:00', 0, NULL, NULL, NULL),
+ (7103, 2, NULL, NULL, N'DEMO-00A1B2', 2, NULL, 1, 'ISMERETLEN_KOD', 'DEMO',   3, '2026-09-23T11:25:00', 0, NULL, NULL, NULL);
 
 -- 2026 – más körzetből előkerült eszköz és egy selejtezett eszköz beolvasása
 INSERT #L
@@ -400,7 +477,7 @@ SELECT l.Id, k.Id,
                   AND l2.Minosites IN ('OK', 'MAS_KORZET') AND l2.Sztornozva = 0)
             THEN 'KOZVETLEN' ELSE 'FELTETELEZETT' END
 FROM #L l JOIN dbo.Kiegeszito k ON k.FoEszkozId = l.EszkozId
-WHERE l.Id < 1000 OR (l.Id >= 5000 AND l.Id < 6000);
+WHERE l.Id < 1000 OR (l.Id >= 5000 AND l.Id < 6000) OR (l.Id >= 7000 AND l.Minosites IN ('OK', 'MAS_KORZET', 'TOBBLET'));
 
 --------------------------------------------------------------------------------
 -- 13. A kezdeti Excel-import naplója (részben sikeres, 4 hibás sorral)

@@ -602,6 +602,7 @@ nem nőhet egy fölé párhuzamos beolvasástól.
 
 **Következmények.** Nincs sémaváltozás és nincs zárolás. A számítás egy mellékhatás nélküli függvény
 (`OsszesitesSzolgaltatas.Szamol`), egységteszt rögzíti. Nagy adatmennyiségnél SQL-oldali csoportosításra válthat.
+A számítást a D-041 pontosítja.
 
 ---
 
@@ -619,3 +620,75 @@ nála előkerült idegen eszközt is, különben nem tudná jelezni.
 
 **Következmények.** A 9. alkalom összehasonlító nézetei (megtalált, hiányzó, többlet, más körzet) a tétellista
 állapotszűrőjére épülnek. Részletek: `07_alkalom/01_Mennyisegek_es_elteresek_szerver.md`.
+
+---
+
+## D-038 – A demóadatok követik a szerver szabályait, a nyitott leltárban minden eltéréssel
+
+- **Állapot:** javasolt (Kiss Barnabás, 7. alkalom) · **Terület:** adatbázis, tesztelés
+
+**Kontextus.** A nyitott 2026-os demóleltárban nem volt mennyiségi eltérés, így a 7. alkalom témája nem volt bemutatható.
+A minősítés visszajátszása azt is megmutatta, hogy a 2025-ös demóadatok 7 sora nem azt a minősítést viseli, amelyet a
+szerver adna.
+
+**Alternatívák.** 1) Külön, 7. alkalmi kiegészítő szkript. 2) A meglévő `db/demoadatok.sql` bővítése és javítása.
+
+**Döntés.** **2.** Egy szkript marad (D-023), a nyitott leltárban minden tételállapotra és minősítésre van példa, a
+`db/ellenorzes.sql` pedig visszajátssza a tárolt minősítéseket.
+
+**Következmények.** A demóadatok továbbra is csak üres adatbázisba tölthetők, ezért a meglévő próbaadatbázist újra kell
+tölteni. Ha a minősítés szabályai változnak, az ellenőrző szkript jelzi, hogy a demóadatokat is igazítani kell.
+Részletek: `07_alkalom/02_Adat_es_minoseg.md`.
+
+---
+
+## D-039 – SQL Serveres tesztek környezeti változóval
+
+- **Állapot:** javasolt (Kiss Barnabás, 7. alkalom) · **Terület:** tesztelés
+
+**Kontextus.** A memóriabeli adatbázis nem ellenőrzi az SQL-re fordítást, a számított oszlopot és a megszorításokat, a
+kézi szkriptfuttatás pedig könnyen elmarad.
+
+**Alternatívák.** 1) Csak kézi szkript. 2) Automatikus tesztek, amelyek a `LELTAR_TESZT_SQLSERVER` környezeti változó
+megadásakor futnak, egyébként kimaradnak. 3) SQL Server a CI-ban (szolgáltatás vagy konténer).
+
+**Döntés.** **2.** Egy paranccsal megismételhető, saját ideiglenes adatbázison dolgozik, és nem kér új függőséget.
+
+**Következmények.** A CI továbbra sem futtatja ezeket, fejlesztői gépen, jelentősebb módosítás után kell futtatni. A 3.
+lehetőség később is bevezethető, a tesztek változtatása nélkül.
+
+---
+
+## D-040 – Szövegként írt mennyiség az importban
+
+- **Állapot:** javasolt (Kiss Barnabás, 7. alkalom) · **Terület:** import
+
+**Kontextus.** A valódi forrásfájlt még nem ismerjük, a mennyiség szövegként is érkezhet. A mennyiségek összevetése miatt
+egy tévesen 1-re állított készlet hamis többletet okozna.
+
+**Döntés.** Elfogadott alakok: *30*, *1 200*, *30,0*, *30 db*, *12 szett*; a cellába írt egység is bekerül, de az *Egység*
+oszlop erősebb. Az *1.000* és az *1,000* nem egyértelmű, ezért figyelmeztetés; a törtszám szintén. Rossz érték esetén új
+eszköznél az alapérték (1) él, meglévőnél a régi darabszám marad (D-033).
+
+**Következmények.** A valódi fájl ismeretében a lista bővíthető. Részletek: `07_alkalom/02_Adat_es_minoseg.md`, 4. pont.
+
+---
+
+## D-041 – Az ismételt leolvasás és a nem elvárt egyedi eszköz a darabszámban
+
+- **Állapot:** javasolt (Kiss Barnabás, 7. alkalom) · **Terület:** leltárlogika
+
+**Kontextus.** A D-036 egyedi eszköznél a mennyiségek maximumát veszi, és ebbe az `ISMETELT` sor beírt mennyisége is
+beleszámított: az 5-ös mennyiséggel ismételt beolvasás 5 darabot és 4 többletet adott, miközben a képernyő azt írta, hogy a
+darabszám nem nőtt. A nem elvárt tétel `elvart = 0` értékkel a mennyiséges ágra került, ezért az első leolvasás sztornója
+után a beolvasott mennyiség 0 lett, pedig az eszköz előkerült.
+
+**Alternatívák.** 1) A szerver már mentéskor 1-re írja az `ISMETELT` leolvasás mennyiségét. 2) A leolvasás a beírt értékkel
+marad meg, és a számítás veszi legfeljebb 1 darabnak.
+
+**Döntés.** **2.** A leolvasás azt őrzi meg, amit a leltározó beírt, és a szabály egy helyen van. Nem elvárt tételnél a
+törzsadat darabszáma dönti el, hogy az eszköz egyedi vagy mennyiséges, ahogy a beolvasásnál is; a tételen megjelenő elvárt
+mennyiség továbbra is 0.
+
+**Következmények.** Nincs sémaváltozás, a demóadatok számai nem változnak. A többletként minősített leolvasás megtartja a
+mennyiségét. Részletek: `07_alkalom/02_Adat_es_minoseg.md`, 5. pont.

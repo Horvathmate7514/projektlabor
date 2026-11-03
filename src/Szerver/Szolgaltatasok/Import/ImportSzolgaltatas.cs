@@ -272,20 +272,27 @@ public class ImportSzolgaltatas(LeltarDbContext db, TimeProvider ido)
 
         if (excel.Ertek(ImportMezo.Mennyiseg) is { } mny)
         {
-            if (ImportErtekek.Egesz(mny) is { } m && m > 0)
-                s.Mennyiseg = m;
+            var (darab, cellaEgyseg) = ImportErtekek.Mennyiseg(mny);
+            if (darab > 0)
+            {
+                s.Mennyiseg = darab;
+                s.Egyseg = cellaEgyseg;
+            }
             else
-                Figy(ImportMezo.Mennyiseg, "A mennyiség nem pozitív egész szám; az alapérték (1) lesz érvényes.", mny.Szoveg);
+            {
+                Figy(ImportMezo.Mennyiseg,
+                    "A mennyiség nem pozitív egész szám. Új eszköznél az alapérték (1) lesz érvényes, meglévőnél a régi darabszám marad.",
+                    mny.Szoveg);
+            }
         }
 
+        // Az egység oszlopa erősebb, mint a mennyiség cellájába írt egység („30 szett”).
         if (excel.Ertek(ImportMezo.MennyisegiEgyseg) is { } egy && egy.Szoveg.Length > 0)
-        {
             s.Egyseg = egy.Szoveg;
-            if (s.Egyseg.Length > MaxEgysegHossz)
-            {
-                Figy(ImportMezo.MennyisegiEgyseg, $"A mennyiségi egység {MaxEgysegHossz} karakterre rövidül.", s.Egyseg);
-                s.Egyseg = s.Egyseg[..MaxEgysegHossz];
-            }
+        if (s.Egyseg is { Length: > MaxEgysegHossz })
+        {
+            Figy(ImportMezo.MennyisegiEgyseg, $"A mennyiségi egység {MaxEgysegHossz} karakterre rövidül.", s.Egyseg);
+            s.Egyseg = s.Egyseg[..MaxEgysegHossz];
         }
 
         if (excel.Ertek(ImportMezo.Ertek) is { } ert)

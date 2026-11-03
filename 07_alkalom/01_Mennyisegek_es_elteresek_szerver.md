@@ -23,7 +23,7 @@ A darabszám nem a leolvasáskor eltárolt érték, hanem **mindig a nem sztorn�
 
 | Eszköz | Beolvasott mennyiség | Saját körzetben |
 |---|---|---|
-| Egyedi (elvárt = 1) | a leolvasások mennyiségeinek **maximuma** | ugyanez, csak az elvárt körzet leolvasásaiból |
+| Egyedi (elvárt = 1) | a leolvasások mennyiségeinek **maximuma**; az `ISMETELT` sor legfeljebb 1 darabot jelent (D-041) | ugyanez, csak az elvárt körzet leolvasásaiból |
 | Mennyiséges (elvárt > 1) | a nem `ISMETELT` leolvasások mennyiségeinek **összege** | ugyanez az elvárt körzetre szűrve |
 
 Az egyedi eszköznél a maximum két ismert korlátot old fel a 6. alkalomból:
@@ -34,6 +34,8 @@ Az egyedi eszköznél a maximum két ismert korlátot old fel a 6. alkalomból:
   darabszám akkor is 1 marad. Zárolásra így nincs szükség.
 
 Egy egyedi eszköz 2-es mennyiséggel beolvasva továbbra is többletként jelenik meg (a leolvasás `TOBBLET` minősítésű).
+
+Nem elvárt tételnél a törzsadat darabszáma dönti el, hogy az eszköz egyedi vagy mennyiséges (D-041).
 
 ## 3. A tétel állapota
 
