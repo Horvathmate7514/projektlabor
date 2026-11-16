@@ -77,12 +77,20 @@ public class OsszesitesSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosu
     public async Task<LapozottLista<OsszesitesTetel>> TetelekAsync(
         long idoszakId, OsszesitesSzuro szuro, ClaimsPrincipal felhasznalo, CancellationToken ct)
     {
+        var lista = await SzurtTetelekAsync(idoszakId, szuro, felhasznalo, ct);
+        var oldal = Math.Max(1, szuro.Oldal);
+        var meret = Math.Clamp(szuro.OldalMeret, 1, OsszesitesSzuro.MaxOldalMeret);
+        return new LapozottLista<OsszesitesTetel>(lista.Skip((oldal - 1) * meret).Take(meret).ToList(), oldal, meret, lista.Count);
+    }
+
+    /// <summary>A szűrt tétellista lapozás nélkül; ebből készül a lapozott lista és az Excel-export is.</summary>
+    public async Task<List<OsszesitesTetel>> SzurtTetelekAsync(
+        long idoszakId, OsszesitesSzuro szuro, ClaimsPrincipal felhasznalo, CancellationToken ct)
+    {
         if (szuro.Allapot is { } a && !Enum.IsDefined(a))
             throw UzletiHiba.Hibas("Ismeretlen tételállapot.");
 
         var (tetelek, _, _) = await BetoltesAsync(idoszakId, felhasznalo, ct);
-        var oldal = Math.Max(1, szuro.Oldal);
-        var meret = Math.Clamp(szuro.OldalMeret, 1, OsszesitesSzuro.MaxOldalMeret);
 
         IEnumerable<OsszesitesTetel> szurt = tetelek;
         if (szuro.LeltarkorzetId is { } korzetId)
@@ -95,8 +103,57 @@ public class OsszesitesSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosu
         if (szuro.CsakElteresek)
             szurt = szurt.Where(t => t.Allapot != TetelAllapot.Rendben);
 
-        var lista = szurt.OrderBy(t => t.Allapot).ThenBy(t => t.Megnevezes).ThenBy(t => t.EszkozId).ToList();
-        return new LapozottLista<OsszesitesTetel>(lista.Skip((oldal - 1) * meret).Take(meret).ToList(), oldal, meret, lista.Count);
+        return szurt.OrderBy(t => t.Allapot).ThenBy(t => t.Megnevezes).ThenBy(t => t.EszkozId).ToList();
+    }
+
+    public static TetelValtozas Valtozas(TetelAllapot? korabbi, TetelAllapot? aktualis) => (korabbi, aktualis) switch
+    {
+        (null, _) => TetelValtozas.UjTetel,
+        (_, null) => TetelValtozas.KikerultTetel,
+        (TetelAllapot.Hianyzik, TetelAllapot.Hianyzik) => TetelValtozas.TartosHiany,
+        (TetelAllapot.Hianyzik, _) => TetelValtozas.Megkerult,
+        (_, TetelAllapot.Hianyzik) => TetelValtozas.UjHiany,
+        var (k, a) when k == a => TetelValtozas.Valtozatlan,
+        _ => TetelValtozas.AllapotValtozott,
+    };
+
+    /// <summary>Két leltáridőszak tételeinek összevetése eszközönként (D-038); a korábbi időszak adatai nem változnak.</summary>
+    public async Task<IdoszakOsszevetes> OsszevetesAsync(
+        long idoszakId, OsszevetesSzuro szuro, ClaimsPrincipal felhasznalo, CancellationToken ct)
+    {
+        if (szuro.KorabbiIdoszakId == idoszakId)
+            throw UzletiHiba.Hibas("Egy leltáridőszak önmagával nem vethető össze.");
+        if (szuro.Valtozas is { } v && !Enum.IsDefined(v))
+            throw UzletiHiba.Hibas("Ismeretlen változástípus.");
+
+        var (aktualis, _, _) = await BetoltesAsync(idoszakId, felhasznalo, ct);
+        var (korabbi, _, _) = await BetoltesAsync(szuro.KorabbiIdoszakId, felhasznalo, ct);
+        var korabbiak = korabbi.ToDictionary(t => t.EszkozId);
+        var aktualisak = aktualis.ToDictionary(t => t.EszkozId);
+
+        var osszes = korabbiak.Keys.Union(aktualisak.Keys)
+            .Select(id =>
+            {
+                korabbiak.TryGetValue(id, out var k);
+                aktualisak.TryGetValue(id, out var a);
+                return new OsszevetesTetel(id, (a ?? k)!.Megnevezes, k?.Allapot, a?.Allapot,
+                    k?.BeolvasottMennyiseg ?? 0, a?.BeolvasottMennyiseg ?? 0, Valtozas(k?.Allapot, a?.Allapot));
+            })
+            .ToList();
+
+        var darabok = Enum.GetValues<TetelValtozas>().ToDictionary(t => t, t => osszes.Count(o => o.Valtozas == t));
+
+        IEnumerable<OsszevetesTetel> szurt = osszes;
+        if (szuro.Valtozas is { } valtozas)
+            szurt = szurt.Where(o => o.Valtozas == valtozas);
+        if (szuro.CsakValtozasok)
+            szurt = szurt.Where(o => o.Valtozas != TetelValtozas.Valtozatlan);
+
+        var lista = szurt.OrderBy(o => o.Valtozas).ThenBy(o => o.Megnevezes).ThenBy(o => o.EszkozId).ToList();
+        var oldal = Math.Max(1, szuro.Oldal);
+        var meret = Math.Clamp(szuro.OldalMeret, 1, OsszevetesSzuro.MaxOldalMeret);
+        return new IdoszakOsszevetes(szuro.KorabbiIdoszakId, idoszakId, darabok,
+            new LapozottLista<OsszevetesTetel>(lista.Skip((oldal - 1) * meret).Take(meret).ToList(), oldal, meret, lista.Count));
     }
 
     public async Task<ElvartTetelAdat> UtolagosFelvetelAsync(long idoszakId, UtolagosTetelKeres keres, CancellationToken ct)
@@ -157,7 +214,7 @@ public class OsszesitesSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosu
             .Distinct().ToList();
         var eszkozok = await db.Eszkozok.AsNoTracking()
             .Where(e => eszkozIdk.Contains(e.Id))
-            .Select(e => new { e.Id, e.Megnevezes, e.MennyisegiEgyseg, e.ElvartMennyiseg })
+            .Select(e => new { e.Id, e.Megnevezes, e.MennyisegiEgyseg, e.ElvartMennyiseg, e.EszkozAllapot.Megszunt })
             .ToDictionaryAsync(e => e.Id, ct);
 
         var eszkozOlvasasai = olvasasok.Where(o => o.EszkozId is not null).ToLookup(o => o.EszkozId!.Value);
@@ -193,7 +250,8 @@ public class OsszesitesSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosu
                 Math.Max(0, beolvasott - elvartMennyiseg),
                 Allapot(elvart is not null, elvartMennyiseg, beolvasott, sajat),
                 talaltKorzetek,
-                sajatOlvasasok.Select(o => (DateTime?)o.Idopont).Max()));
+                sajatOlvasasok.Select(o => (DateTime?)o.Idopont).Max(),
+                e.Megszunt));
         }
 
         return (tetelek, olvasasok, lathato);
