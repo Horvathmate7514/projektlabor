@@ -165,8 +165,9 @@ Eredmény: a teljes tesztcsomag **132/132** sikeres.
 
 ## 9. Nyitott pontok
 
-- **A valódi forrásfájl** még nem érkezett meg. Ha megjön, a fejlécnevek listáját (`ImportErtekek`) és a leképezést
-  hozzá kell igazítani.
+- **A valódi forráslisták** megvannak (két SAP-eszközlista), de az import még nem tudja betölteni őket: a fejlécek
+  eltérnek, minden eszköz után részösszeg-sor áll, és az eszközszám csak az alszámmal együtt egyedi. A fejlécnevek
+  listáját (`ImportErtekek`) és a leképezést a csoport döntése után kell hozzájuk igazítani.
 - **Kliens:** az import képernyő (Bárkányi Máté) még hiányzik: fájlválasztás, a próbafuttatás eredménye
   (összesítés, soronkénti állapot és különbségek), jóváhagyás, importnapló, a hibák letöltése.
 - **A hibák exportja** csak a hibalistát tartalmazza (sor, oszlop, hiba, érték), az eredeti sorokat nem, mert a

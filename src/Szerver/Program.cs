@@ -64,6 +64,10 @@ builder.Services.AddScoped<BeolvasasSzolgaltatas>();
 builder.Services.AddScoped<OsszesitesSzolgaltatas>();
 builder.Services.AddScoped<ImportSzolgaltatas>();
 builder.Services.AddScoped<ImportNaploSzolgaltatas>();
+builder.Services.AddScoped<TorzsadatKezelesSzolgaltatas>();
+builder.Services.AddScoped<EszkozKezelesSzolgaltatas>();
+builder.Services.AddScoped<KiegeszitoSzolgaltatas>();
+builder.Services.AddScoped<TortenetSzolgaltatas>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers(o => o.Filters.Add<UzletiHibaSzuro>());
@@ -102,6 +106,14 @@ else
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Az audit napló a kérést végző felhasználót rögzíti (D-046).
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+        context.RequestServices.GetRequiredService<LeltarDbContext>().AktualisFelhasznaloId = context.User.FelhasznaloId();
+    await next();
+});
 
 app.MapControllers();
 

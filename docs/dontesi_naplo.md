@@ -692,3 +692,103 @@ mennyiség továbbra is 0.
 
 **Következmények.** Nincs sémaváltozás, a demóadatok számai nem változnak. A többletként minősített leolvasás megtartja a
 mennyiségét. Részletek: `07_alkalom/02_Adat_es_minoseg.md`, 5. pont.
+
+---
+
+## D-042 – A beolvasás helyisége az eszköz helytörténetébe kerül
+
+- **Állapot:** javasolt (Kiss Barnabás, 8. alkalom) · **Terület:** leltárlogika, történetiség
+
+**Kontextus.** A beolvasás eddig is eltárolta a kiválasztott helyiséget, de az eszköz aktuális helye (F-23) nem frissült belőle.
+
+**Alternatívák.** 1) A hely csak kézi áthelyezéssel változik. 2) Minden megtalálásnak számító, helyiséggel rögzített beolvasás
+frissíti a helyet. 3) Csak egyedi eszköznél frissít, mennyiségesnél nem.
+
+**Döntés.** **2.** Az ismeretlen kód és a megszűnt eszköz beolvasása nem ír helyet. Mennyiséges eszköznél az aktuális hely az
+utolsó beolvasás helyisége, a helyiségenkénti megoszlás a leolvasásokból látszik. Ha az eszköz már ott van, nem
+keletkezik új sor. A sztornó visszaállítja az előző helyet, ha az eszköz még a sztornózott leolvasás helyén áll.
+
+**Következmények.** A hely a leolvasással egy mentésben íródik. A `BeolvasasSzolgaltatas`-ba két hívás került. Részletek:
+`08_alkalom/01_Hely_felelos_tipus_kiegeszitok.md`, 3.2. pont.
+
+---
+
+## D-043 – Törzsadat inaktiválása csak használaton kívül
+
+- **Állapot:** javasolt (Kiss Barnabás, 8. alkalom) · **Terület:** törzsadatok
+
+**Kontextus.** A helyiség, az eszköztípus és a felelős személy nem törölhető (D-001), de kivezethetőnek kell lennie.
+
+**Alternatívák.** 1) Bármikor inaktiválható, az eszközök az inaktív elemnél maradnak. 2) Csak akkor inaktiválható, ha már semmi nem
+használja. 3) Inaktiváláskor a rendszer automatikusan leválasztja az eszközöket.
+
+**Döntés.** **2.** A hibaüzenet megmondja, hány eszköz érintett; a leltárfelelős előbb áthelyezi vagy átsorolja őket. A típus
+neve ékezettől és írásmódtól függetlenül egyedi, mert az import név alapján keres (D-034).
+
+**Következmények.** Nem marad eszköz inaktív helyiségben, típusban vagy felelősnél, és adat sem vész el csendben.
+
+---
+
+## D-044 – Kiegészítők ellenőrzése: sor a fő eszköz leolvasásához
+
+- **Állapot:** javasolt (Kiss Barnabás, 8. alkalom) · **Terület:** leltárlogika
+
+**Kontextus.** Az F-20 szerint meg kell tudni állapítani, hogy a kiegészítőt közvetlenül ellenőrizték-e, vagy csak a fő eszköz
+alapján feltételezték megtaláltnak.
+
+**Alternatívák.** 1) Lekérdezéskor számolt állapot, tárolt sor nélkül. 2) A fő eszköz minden megtalálásnak számító leolvasásához
+kiegészítőnként egy tárolt sor.
+
+**Döntés.** **2.** A saját kódú kiegészítő attól lesz közvetlen, hogy a kódját beolvassák (előbb vagy később); a sztornója
+visszaállítja. A kód nélküli tartozékot a leltározó a saját leolvasásánál kézzel erősítheti meg. Egy eszköz egyszerre
+egy fő eszköz kiegészítője lehet; a kapcsolat nem törlődik, csak lezárul (F-21).
+
+**Következmények.** A kód nélküli tartozék kézi megerősítése is rögzíthető. A lezárt leltárban az ellenőrzés nem módosítható.
+
+---
+
+## D-045 – Megszűnt állapotba lépéskor a hely és a felelős lezárul
+
+- **Állapot:** javasolt (Kiss Barnabás, 10. alkalom) · **Terület:** állapotok, történetiség
+
+**Kontextus.** Selejtezett, elveszett, ellopott vagy átadott eszköznél kérdés, mi legyen az aktuális helyével és felelősével.
+
+**Alternatívák.** 1) Megmarad. 2) Lezárul, a történet megőrzésével.
+
+**Döntés.** **2.** A demóadatok is így épülnek fel. A megszűnt eszköz indoklással visszaállítható; a hely és a felelős ilyenkor
+nem áll vissza magától. Megszűnt eszköznek nem adható hely és felelős.
+
+**Következmények.** Az ellenőrző szkript külön pontban vizsgálja. A nyitott leltár pillanatképe nem változik (D-003).
+
+---
+
+## D-046 – Automatikus audit napló az adatrétegben
+
+- **Állapot:** javasolt (Kiss Barnabás, 10. alkalom) · **Terület:** történetiség, adatréteg
+
+**Kontextus.** Az S01 minden adatmódosítás naplózását várja. Ha minden szolgáltatás maga naplóz, egy új funkció könnyen kimarad.
+
+**Alternatívák.** 1) Minden szolgáltatás maga ír naplósort. 2) Az adatréteg mentéskor, a változáskövetőből állítja elő a sorokat.
+3) Adatbázis-triggerek.
+
+**Döntés.** **2.** A törzs- és alapadatokra, valamint a kézi áthelyezésre és a felelősváltásra. A leolvasás, az
+állapotváltozás és az importnapló maga is eseménynapló, ezekről nem készül külön sor. A jelszó-hash és az utolsó
+belépés nem kerül a naplóba.
+
+**Következmények.** A módosítás naplósora az adattal egy mentésben íródik; új elemnél második mentés kell, amelyet SQL Serveren
+tranzakció fog össze. A felhasználót a `Program.cs` egy köztes rétege adja át. A demóadat-szkript nem naplóz.
+
+---
+
+## D-047 – Korábbi időpont visszakeresése a történeti táblákból
+
+- **Állapot:** javasolt (Kiss Barnabás, 10. alkalom) · **Terület:** történetiség
+
+**Kontextus.** A kiírás szerint egy korábbi állapot lehetőleg legyen rekonstruálható.
+
+**Alternatívák.** 1) Rendszerverziózott (temporal) táblák. 2) A meglévő történeti táblák lekérdezése (D-011).
+
+**Döntés.** **2.** Az eszköz állapota, helye és felelőse bármely időpontra visszakereshető. A többi mező korábbi értéke az
+audit naplóból olvasható ki.
+
+**Következmények.** Nincs sémaváltozás. Az audit napló bevezetése előtti mezőmódosítások nem kereshetők vissza.

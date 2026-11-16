@@ -88,6 +88,8 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [07_alkalom/Prezentacio/](07_alkalom/Prezentacio/) | 10 perces prezentáció (16 dia) előadói jegyzetekkel, képernyőképekkel |
 | [07_alkalom/Dokumentacio/](07_alkalom/Dokumentacio/) | Dokumentáció v0.6: új *4. Tesztelés és validáció* fejezet, 3.4.6, a 3.5 frissítése (Horváth Máté 7. alkalmi fejezete még nincs benne) |
 | [db/minta/forrasadatok_mennyisegek.xlsx](db/minta/forrasadatok_mennyisegek.xlsx) | Mintafájl a szöveges mennyiségekhez és az ismételt importhoz |
+| [08_alkalom/01_Hely_felelos_tipus_kiegeszitok.md](08_alkalom/01_Hely_felelos_tipus_kiegeszitok.md) | 8. alkalom, szerveroldal: helyiségek, hely a beolvasásból, felelős, eszköztípusok, kiegészítők ellenőrzése |
+| [10_alkalom/01_Allapotok_tortenetiseg_audit.md](10_alkalom/01_Allapotok_tortenetiseg_audit.md) | 10. alkalom, szerveroldal: állapotváltás, az eszköz története, korábbi időpont visszakeresése, audit napló |
 
 ## Forráskód
 
@@ -189,8 +191,8 @@ lefuttathatók. Az adatmodell tesztjei (`AdatmodellTesztek`) az SQL Server-speci
 számított oszlop, CHECK megszorítások, törlési szabályok) és azt ellenőrzik, hogy a migrációk naprakészek-e.
 A GitHub Actions ugyanezt futtatja minden pushnál és pull requestnél (`.github/workflows/ci.yml`).
 
-A `SqlServerTesztek` és a `SqlServerDarabszamTesztek` csak valódi SQL Serverrel fut, különben kimarad. Saját, ideiglenes
-adatbázist hoznak létre a migrációkkal és a demóadatokkal, majd a végén törlik (PowerShellben):
+A `SqlServerTesztek`, a `SqlServerDarabszamTesztek` és a `SqlServerTortenetTesztek` csak valódi SQL Serverrel fut,
+különben kimarad. Saját, ideiglenes adatbázist hoznak létre a migrációkkal és a demóadatokkal, majd a végén törlik (PowerShellben):
 
 ```powershell
 $env:LELTAR_TESZT_SQLSERVER = "Server=localhost;Trusted_Connection=True;TrustServerCertificate=True"; dotnet test

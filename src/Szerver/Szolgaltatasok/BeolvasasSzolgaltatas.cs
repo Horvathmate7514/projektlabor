@@ -104,6 +104,7 @@ public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosul
         leolvasas.EszkozId = talalat.EszkozId;
         leolvasas.EszkozKodId = talalat.KodId;
         leolvasas.Minosites = minosites;
+        await LeolvasasKovetes.BeolvasaskorAsync(db, leolvasas, ct);
         await MentesAsync(leolvasas, ct);
 
         var beolvasott = eddigBeolvasott + (minosites == Minosites.Ismetelt ? 0 : keres.Mennyiseg);
@@ -203,6 +204,7 @@ public class BeolvasasSzolgaltatas(LeltarDbContext db, KorzetJogosultsag jogosul
         leolvasas.SztornoIndoklas = indoklas;
         leolvasas.SztornoIdopont = ido.GetUtcNow().UtcDateTime;
         leolvasas.SztornoztaId = sajatId;
+        await LeolvasasKovetes.SztornokorAsync(db, leolvasas, leolvasas.SztornoIdopont.Value, ct);
         await db.SaveChangesAsync(ct);
     }
 

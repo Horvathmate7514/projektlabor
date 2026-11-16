@@ -1,6 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using LeltarKezelo.Kozos.Auth;
+using LeltarKezelo.Kozos.Eszkozok;
+using LeltarKezelo.Kozos.Naplo;
+using LeltarKezelo.Kozos.Torzsadatok;
 using LeltarKezelo.Kozos.Import;
 using LeltarKezelo.Kozos.Leltar;
 using LeltarKezelo.Szerver.Adat;
@@ -107,7 +110,7 @@ public class SqlServerTesztek(SqlServerAdatbazis adatbazis) : IClassFixture<SqlS
 
         Assert.Equal(3, halmazok.Count);
         Assert.Equal(15, halmazok[0].Count);
-        Assert.Equal(10, halmazok[2].Count);
+        Assert.Equal(15, halmazok[2].Count);
         Assert.All(halmazok[0].Concat(halmazok[2]), sor => Assert.True(Szoveg(sor, "Eredmeny") == "MEGFELELT", Szoveg(sor, "Ellenorzes")));
     }
 
@@ -309,6 +312,62 @@ public class SqlServerDarabszamTesztek(SqlServerAdatbazis adatbazis) : IClassFix
         Assert.Equal(Minosites.Ismetelt, masodik.Minosites);
         Assert.Equal((TetelAllapot.Rendben, 1, 1, 0), (egyedi.Allapot, egyedi.BeolvasottMennyiseg, egyedi.SajatKorzetben, egyedi.Tobblet));
         Assert.Equal((TetelAllapot.NemElvart, 1), (idegen.Allapot, idegen.BeolvasottMennyiseg));
+        await SqlServerTesztek.SzkriptMegfelelAsync(adatbazis);
+        await SqlServerTesztek.EgyezikAzSqlSzamitassalAsync(adatbazis);
+    }
+}
+
+/// <summary>
+/// Hely, felelős, állapot, kiegészítők és audit napló valódi SQL Serveren (8. és 10. alkalom): a szűrt egyedi
+/// indexek, az érvényességi CHECK megszorítások és a kétlépéses naplózás csak itt ellenőrizhető.
+/// </summary>
+public class SqlServerTortenetTesztek(SqlServerAdatbazis adatbazis) : IClassFixture<SqlServerAdatbazis>
+{
+    [SqlServerFact]
+    public async Task Athelyezes_felelosvaltas_allapotvaltas_es_naplozas_utan_is_megfelel_az_ellenorzo_szkript()
+    {
+        const long idoszak = SqlServerTesztek.Nyitott2026;
+        const long szamitogep = 1;
+        const long monitor = 2;
+        const long laptop = 3;
+        const long mikA = 1;
+        var admin = SqlServerTesztek.Admin;
+        await using var db = adatbazis.Kontextus();
+        var jogosultsag = new KorzetJogosultsag(db);
+        var beolvasas = new BeolvasasSzolgaltatas(db, jogosultsag, TimeProvider.System);
+        var eszkozok = new EszkozKezelesSzolgaltatas(db, jogosultsag, TimeProvider.System);
+        var torzsadatok = new TorzsadatKezelesSzolgaltatas(db);
+        var kiegeszitok = new KiegeszitoSzolgaltatas(db, jogosultsag, TimeProvider.System);
+        var tortenet = new TortenetSzolgaltatas(db, jogosultsag);
+
+        // Új helyiség (naplósor a második mentésben), majd beolvasás ebben a helyiségben és a sztornója.
+        var helyiseg = await torzsadatok.HelyisegLetrehozasAsync(new HelyisegMentes("T", "001", Megnevezes: "Tesztlabor"), default);
+        var eredetiHely = (await eszkozok.HozzarendelesekAsync(szamitogep, admin, default)).HelyisegId;
+        var kod = await db.EszkozKodok.Where(k => k.EszkozId == szamitogep && k.Aktiv).Select(k => k.Ertek).FirstAsync();
+        var olvasas = await beolvasas.BeolvasasAsync(idoszak, new BeolvasasKeres(kod, mikA, BeviteliMod.Kezi, 1, helyiseg.Id), admin, default);
+        var athelyezve = await eszkozok.HozzarendelesekAsync(szamitogep, admin, default);
+        var kiegeszitoi = await kiegeszitok.LeolvasasKiegeszitoiAsync(olvasas.LeolvasasId, admin, default);
+        await beolvasas.SztornoAsync(olvasas.LeolvasasId, new SztornoKeres("Teszt"), admin, default);
+        var visszaallitva = await eszkozok.HozzarendelesekAsync(szamitogep, admin, default);
+
+        // Kézi áthelyezés kétszer egymás után, felelősváltás, majd megszűnt állapot.
+        await eszkozok.HelyAsync(laptop, new HelyKeres(helyiseg.Id), admin, default);
+        await eszkozok.HelyAsync(laptop, new HelyKeres(null), admin, default);
+        var ujFelelos = await torzsadatok.FelelosLetrehozasAsync(new FelelosMentes("Teszt Felelős", "T-0001"), default);
+        await eszkozok.FelelosAsync(monitor, new FelelosKeres(ujFelelos.Id), admin, default);
+        var megszunt = await eszkozok.AllapotAsync(monitor, new AllapotKeres(6, "Teszt: nem került elő."), admin, default);
+        var monitorTortenet = await tortenet.EszkozTortenetAsync(monitor, admin, default);
+        var naplo = await tortenet.NaploAsync(new NaploSzuro { Entitas = "Helyiseg", EntitasId = helyiseg.Id }, default);
+
+        Assert.Equal((helyiseg.Id, ElhelyezesForras.Leltar), (athelyezve.HelyisegId, athelyezve.HelyForras));
+        Assert.NotEmpty(kiegeszitoi);
+        Assert.Equal(eredetiHely, visszaallitva.HelyisegId);
+        Assert.Equal((true, null, null), (megszunt.Megszunt, megszunt.HelyisegId, megszunt.FelelosId));
+        Assert.Equal("Teszt Felelős", monitorTortenet.Felelosok[^1].Nev);
+        Assert.All(monitorTortenet.Felelosok, f => Assert.NotNull(f.ErvenyesIg));
+        Assert.Equal("elveszett", monitorTortenet.Allapotok[^1].UjAllapot);
+        Assert.Contains(monitorTortenet.Modositasok, n => n.Muvelet == "MODOSITAS" && n.UjErtekJson!.Contains("EszkozAllapotId"));
+        Assert.Equal("LETREHOZAS", Assert.Single(naplo.Elemek).Muvelet);
         await SqlServerTesztek.SzkriptMegfelelAsync(adatbazis);
         await SqlServerTesztek.EgyezikAzSqlSzamitassalAsync(adatbazis);
     }
