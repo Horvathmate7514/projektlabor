@@ -792,3 +792,35 @@ tranzakció fog össze. A felhasználót a `Program.cs` egy köztes rétege adja
 audit naplóból olvasható ki.
 
 **Következmények.** Nincs sémaváltozás. Az audit napló bevezetése előtti mezőmódosítások nem kereshetők vissza.
+
+---
+
+## D-048 – Időszakok összevetése eszközönként, számítva
+
+- **Állapot:** elfogadott (9. alkalom) · **Terület:** leltárlogika
+
+**Kontextus.** A korábbi időszakokat meg kell őrizni és össze kell tudni vetni az aktuálissal.
+
+**Alternatívák.** 1) Lezáráskor eltárolt eredménytábla. 2) Mindkét időszak tétellistájának számítása (D-036) és
+eszközönkénti párosítása lekérdezéskor.
+
+**Döntés.** **2.** A leolvasások és a pillanatkép a lezárás után nem változnak, így a számított eredmény is
+ugyanaz marad; nincs sémaváltozás. A változás hét kategóriája: `UjTetel`, `KikerultTetel`, `TartosHiany`,
+`Megkerult`, `UjHiany`, `AllapotValtozott`, `Valtozatlan`.
+
+**Következmények.** Ha nagy adatmennyiségnél lassú, az 1. változat később bevezethető ugyanazzal a válaszformátummal.
+Részletek: `09_alkalom/01_Osszehasonlitas_szerver.md`.
+
+---
+
+## D-049 – A leltár alatt megszűnt eszköz elvárt marad, de jelölve
+
+- **Állapot:** elfogadott (9. alkalom) · **Terület:** leltárlogika
+
+**Kontextus.** A 10. alkalom nyitott pontja: a nyitott leltárban a megszűnt eszköz a pillanatkép miatt továbbra is
+elvárt tétel.
+
+**Döntés.** A pillanatkép nem változik (D-030), a tétel viszont `Megszunt` jelzést kap az összesítésben és az
+exportban. A tétel állapota ettől nem változik.
+
+**Indoklás.** A leltár eredménye így visszakövethető marad, a felhasználó mégis látja, miért hiányzik az eszköz.

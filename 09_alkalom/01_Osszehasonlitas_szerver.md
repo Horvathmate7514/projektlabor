@@ -13,10 +13,10 @@ kliensen Bárkányi Máté készíti.
 |---|---|
 | Forrásadatok és leolvasások elkülönítése | Változatlanul: elvárt tételek pillanatképe (D-030) és leolvasások időszakonként |
 | Megtalált / hiányzó / többlet / más körzet / eltérő mennyiség | `GET .../tetelek?allapot=` – `Rendben`, `Hianyzik`, `Tobblet`, `MasKorzetben`, `Reszleges`, `NemElvart` |
-| Korábbi időszakok megőrzése és összevetése | `GET /api/leltaridoszakok/{id}/osszevetes?korabbiIdoszakId=` – eszközönkénti változás (D-038) |
+| Korábbi időszakok megőrzése és összevetése | `GET /api/leltaridoszakok/{id}/osszevetes?korabbiIdoszakId=` – eszközönkénti változás (D-048) |
 | Export | `GET /api/leltaridoszakok/{id}/tetelek.xlsx` – körzetösszesítő és szűrt tétellista egy munkafüzetben |
 
-## 2. Időszakok összevetése (D-038)
+## 2. Időszakok összevetése (D-048)
 
 Mindkét időszak tétellistája a 7. alkalom szabályaival számolódik, majd eszközönként párba állnak. A változás:
 
@@ -34,19 +34,25 @@ A válasz a változásonkénti darabszámokat és a lapozott tétellistát adja;
 `csakValtozasok=true` szerint. A láthatóság ugyanaz, mint az összesítésnél (`KorzetJogosultsag`). Hibás esetek: önmagával
 összevetés 400, nem létező időszak 404, ismeretlen változástípus 400.
 
-## 3. Excel-export
+## 3. Megszűnt eszköz a nyitott leltárban (D-049)
+
+A 10. alkalom nyitott kérdésére (Kiss Barnabás): ha egy eszköz a leltár alatt megszűnt állapotba kerül, a
+pillanatkép miatt továbbra is elvárt tétel marad, de a tétel `megszunt: true` jelzést kap, az Excelben külön oszlopban.
+Így a kliens jelölheti, és nem tűnik el nyomtalanul a hiányzók közül.
+
+## 4. Excel-export
 
 A `tetelek.xlsx` ugyanazokat a szűrőket fogadja, mint a tétellista (lapozás nélkül). Két munkalap:
 **Összesítés** (körzetenként, összesen sorral és készültség-százalékkal) és **Tételek** (magyar állapotnevekkel,
 autoszűrővel, rögzített fejléccel). A formázás az importhibák exportját követi.
 
-## 4. Tesztek
+## 5. Tesztek
 
-`tests/Szerver.Tesztek/OsszevetesTesztek.cs` – 11 új eset: a változás minősítése mind a hét esetre (egységteszt),
-két lezárt/nyitott időszak összevetése, szűrés változásra, 400/404, valamint az Excel tartalmának ellenőrzése
-ClosedXML-lel.
+`tests/Szerver.Tesztek/OsszevetesTesztek.cs` – 12 új eset: a változás minősítése mind a hét esetre (egységteszt),
+két időszak összevetése, szűrés változásra, 400/404, az Excel tartalmának ellenőrzése ClosedXML-lel és a megszűnt
+eszköz jelölése. A teljes csomag: 263 teszt, SQL Server nélkül 254 sikeres és 9 kihagyott.
 
-## 5. Ismert korlátok
+## 6. Ismert korlátok
 
 | Téma | Állapot | Terv |
 |---|---|---|
