@@ -19,6 +19,8 @@ public sealed partial class FoAblakViewModel : ObservableObject
     private readonly Func<LeltarozasViewModel> _leltarozas;
     private readonly Func<EszkozokViewModel> _eszkozok;
     private readonly Func<ImportViewModel> _import;
+    private readonly Func<IdoszakokViewModel> _idoszakok;
+    private readonly Func<LeolvasasiNaploViewModel> _naplo;
     private readonly DispatcherTimer _allapotFigyelo = new() { Interval = TimeSpan.FromSeconds(30) };
 
     public FoAblakViewModel(
@@ -27,12 +29,16 @@ public sealed partial class FoAblakViewModel : ObservableObject
         BejelentkezesViewModel bejelentkezes,
         Func<LeltarozasViewModel> leltarozas,
         Func<EszkozokViewModel> eszkozok,
-        Func<ImportViewModel> import)
+        Func<ImportViewModel> import,
+        Func<IdoszakokViewModel> idoszakok,
+        Func<LeolvasasiNaploViewModel> naplo)
     {
         _api = api;
         _leltarozas = leltarozas;
         _eszkozok = eszkozok;
         _import = import;
+        _idoszakok = idoszakok;
+        _naplo = naplo;
         Munkamenet = munkamenet;
         Bejelentkezes = bejelentkezes;
 
@@ -91,6 +97,9 @@ public sealed partial class FoAblakViewModel : ObservableObject
              "Az utolsó eltérések: ismeretlen kód, más körzet, többlet"]), Kesobb: true));
         var leltarozas = new MenuPont("Leltározás", _leltarozas());
         Menu.Add(leltarozas);
+        Menu.Add(new MenuPont("Leltáridőszakok", _idoszakok()));
+        if (Munkamenet.Leltarozhat)
+            Menu.Add(new MenuPont("Leolvasási napló", _naplo()));
         var eszkozok = new MenuPont("Eszközök", _eszkozok());
         Menu.Add(eszkozok);
         Menu.Add(new MenuPont("Összehasonlítás", new KesobbViewModel("Összehasonlítás", "9. alkalom",

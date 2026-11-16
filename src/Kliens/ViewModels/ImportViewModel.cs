@@ -59,12 +59,27 @@ public sealed record ImportFutasSor(long Id, string Ido, string Fajlnev, string 
     };
 }
 
+public sealed record ImportStatuszValasztas(ImportStatusz? Ertek, string Nev);
+
+/// <summary>Üres fejlécnél a szerver automatikus felismerése érvényesül.</summary>
+public sealed partial class OszlopHozzarendeles(ImportMezo mezo) : ObservableObject
+{
+    public ImportMezo Mezo { get; } = mezo;
+    public string Nev => ImportMezok.Nev(Mezo);
+    public string Kotelezo => ImportMezok.Kotelezo.Contains(Mezo) ? "Kötelező mező" : "Opcionális";
+    [ObservableProperty] private string _fejlec = "";
+}
+
 /// <summary>
 /// Excel forrásadatok importálása (UC-01, 5. alkalom): fájl kiválasztása, próbafuttatás (semmit nem ír), az eredmény
 /// soronként, jóváhagyás után a végrehajtás, végül az importnapló és a hibák letöltése Excelben (D-031).
 /// </summary>
 public sealed partial class ImportViewModel(ApiKliens api, Munkamenet munkamenet, Parbeszedek parbeszedek) : OldalViewModel
 {
+    private int _naploVerzio;
+    private bool _oszlopokInicializalva;
+    private bool _oszlopokValtoznak;
+    private bool _naploSzuroValtozik;
     public override string Cim => "Import";
 
     public bool Engedelyezett => munkamenet.Importalhat;
@@ -72,6 +87,22 @@ public sealed partial class ImportViewModel(ApiKliens api, Munkamenet munkamenet
     public ObservableCollection<ImportSor> Sorok { get; } = [];
     public ObservableCollection<ImportFutasSor> Futasok { get; } = [];
     public ObservableCollection<ImportHibaAdat> FutasHibai { get; } = [];
+    public ObservableCollection<OszlopHozzarendeles> Oszlopok { get; } = [];
+    public IReadOnlyList<int> NaploOldalMeretek { get; } = [10, 20, 50, 100, 200];
+    public IReadOnlyList<ImportStatuszValasztas> NaploStatuszok { get; } =
+    [new(null, "Minden státusz"), new(ImportStatusz.Sikeres, "Sikeres"), new(ImportStatusz.Reszleges, "Részleges"),
+     new(ImportStatusz.Sikertelen, "Sikertelen"), new(ImportStatusz.Folyamatban, "Folyamatban")];
+
+    [ObservableProperty] private ImportStatuszValasztas? _naploStatusz;
+    [ObservableProperty] private int _naploOldal = 1;
+    [ObservableProperty] private int _naploOldalMeret = 20;
+    [ObservableProperty] private int _naploOsszesen;
+    [ObservableProperty] private int _naploOldalakSzama;
+    [ObservableProperty] private bool _oszlopokNyitva;
+    public bool VanElozoNaploOldal => NaploOldal > 1;
+    public bool VanKovetkezoNaploOldal => NaploOldal < NaploOldalakSzama;
+    public string NaploLapozasSzoveg => NaploOsszesen == 0 ? "Nincs a szűrésnek megfelelő importfutás."
+        : $"{NaploOldal}/{NaploOldalakSzama}. oldal · {NaploOsszesen} futás";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ProbafuttatasCommand))]
@@ -114,13 +145,65 @@ public sealed partial class ImportViewModel(ApiKliens api, Munkamenet munkamenet
         : $"{e.ForrasbanNemSzereploDarab} nyilvántartott eszköz nem szerepel a fájlban. Ezeket az import nem törli (F-03); " +
           $"például: {string.Join(", ", e.ForrasbanNemSzereplok.Take(5).Select(n => $"{n.SapSzam} {n.Megnevezes}"))}.";
 
-    protected override Task BetoltesAsync() => Engedelyezett ? NaploBetolteseAsync() : Task.CompletedTask;
+    public override Task MegjelenitesAsync()
+    {
+        if (!Engedelyezett) return Task.CompletedTask;
+        if (!_oszlopokInicializalva)
+        {
+            _oszlopokInicializalva = true;
+            _naploSzuroValtozik = true;
+            NaploStatusz = NaploStatuszok[0];
+            _naploSzuroValtozik = false;
+            foreach (var mezo in Enum.GetValues<ImportMezo>())
+            {
+                var sor = new OszlopHozzarendeles(mezo);
+                sor.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(OszlopHozzarendeles.Fejlec) && !_oszlopokValtoznak)
+                        Elemzes = null;
+                };
+                Oszlopok.Add(sor);
+            }
+        }
+        return NaploBetolteseAsync();
+    }
 
     partial void OnFajlUtChanged(string? value) => Elemzes = null;
     partial void OnMunkalapChanged(string value) => Elemzes = null;
+    partial void OnFrissitesekChanged(bool value) => Elemzes = null;
     partial void OnCsakElteresekChanged(bool value) => SorokFrissitese();
     partial void OnElemzesChanged(ImportElemzes? value) => SorokFrissitese();
     partial void OnKivalasztottFutasChanged(ImportFutasSor? value) => _ = FutasHibaiBetolteseAsync(value);
+    partial void OnNaploStatuszChanged(ImportStatuszValasztas? value) => NaploSzuroValtozott();
+    partial void OnNaploOldalMeretChanged(int value) => NaploSzuroValtozott();
+
+    private void NaploSzuroValtozott()
+    {
+        if (_naploSzuroValtozik) return;
+        NaploOldal = 1;
+        _ = NaploBetolteseAsync();
+    }
+
+    [RelayCommand]
+    private void OszlopokTorlese()
+    {
+        foreach (var sor in Oszlopok) sor.Fejlec = "";
+        Elemzes = null;
+    }
+
+    [RelayCommand]
+    private void FelismertOszlopokAtvetele()
+    {
+        if (Elemzes is not { } elemzes) return;
+        _oszlopokValtoznak = true;
+        try
+        {
+            foreach (var sor in Oszlopok)
+                sor.Fejlec = elemzes.Oszlopok.FirstOrDefault(o => o.Mezo == sor.Mezo)?.Fejlec ?? "";
+        }
+        finally { _oszlopokValtoznak = false; }
+        Elemzes = null;
+    }
 
     [RelayCommand]
     private void Tallozas()
@@ -138,6 +221,8 @@ public sealed partial class ImportViewModel(ApiKliens api, Munkamenet munkamenet
     private async Task ProbafuttatasAsync()
     {
         Eredmeny = null;
+        Elemzes = null;
+        OszlopokNyitva = false;
         await FuttatasAsync(async () => Elemzes = await api.ImportProbafuttatasAsync(Fajl, Beallitasok()));
     }
 
@@ -168,6 +253,10 @@ public sealed partial class ImportViewModel(ApiKliens api, Munkamenet munkamenet
                        $"{e.Valtozatlan} változatlan, {e.Kihagyott} kihagyott, {e.Hibas} hibás sor" +
                        (e.UjFelelosok > 0 ? $"; {e.UjFelelosok} új felelős személy." : ".") +
                        (e.Hibas > 0 ? " A hibás sorok listája lent, az importnaplóban látható és letölthető." : "");
+            _naploSzuroValtozik = true;
+            NaploStatusz = NaploStatuszok[0];
+            _naploSzuroValtozik = false;
+            NaploOldal = 1;
             await NaploBetolteseAsync();
             KivalasztottFutas = Futasok.FirstOrDefault(f => f.Id == e.ImportFutasId);
         });
@@ -207,6 +296,8 @@ public sealed partial class ImportViewModel(ApiKliens api, Munkamenet munkamenet
     {
         Munkalap = string.IsNullOrWhiteSpace(Munkalap) ? null : Munkalap.Trim(),
         FrissitesekAlkalmazasa = Frissitesek,
+        Oszlopok = Oszlopok.Where(o => !string.IsNullOrWhiteSpace(o.Fejlec))
+            .ToDictionary(o => o.Mezo, o => o.Fejlec.Trim()),
     };
 
     private void SorokFrissitese()
@@ -220,17 +311,42 @@ public sealed partial class ImportViewModel(ApiKliens api, Munkamenet munkamenet
 
     private async Task NaploBetolteseAsync()
     {
-        try
+        var verzio = ++_naploVerzio;
+        var kivalasztottId = KivalasztottFutas?.Id;
+        await FuttatasAsync(async () =>
         {
-            var lista = await api.ImportNaploAsync(1, 20);
+            var lista = await api.ImportNaploAsync(NaploOldal, NaploOldalMeret, NaploStatusz?.Ertek);
+            if (verzio != _naploVerzio) return;
+            if (lista.OldalakSzama > 0 && lista.Oldal > lista.OldalakSzama)
+            {
+                lista = await api.ImportNaploAsync(lista.OldalakSzama, NaploOldalMeret, NaploStatusz?.Ertek);
+                if (verzio != _naploVerzio) return;
+            }
             Futasok.Clear();
             foreach (var f in lista.Elemek)
                 Futasok.Add(ImportFutasSor.Ebbol(f));
-        }
-        catch (ApiHiba ex)
+            KivalasztottFutas = Futasok.FirstOrDefault(f => f.Id == kivalasztottId) ?? Futasok.FirstOrDefault();
+            NaploOldal = lista.Oldal;
+            NaploOsszesen = lista.Osszesen;
+            NaploOldalakSzama = lista.OldalakSzama;
+            OnPropertyChanged(nameof(VanElozoNaploOldal));
+            OnPropertyChanged(nameof(VanKovetkezoNaploOldal));
+            OnPropertyChanged(nameof(NaploLapozasSzoveg));
+        });
+    }
+
+    [RelayCommand]
+    private async Task NaploOldalraAsync(string irany)
+    {
+        if (Foglalt) return;
+        NaploOldal = irany switch
         {
-            Hiba = ex.Message;
-        }
+            "elso" => 1,
+            "elozo" => Math.Max(1, NaploOldal - 1),
+            "utolso" => Math.Max(1, NaploOldalakSzama),
+            _ => Math.Min(Math.Max(1, NaploOldalakSzama), NaploOldal + 1),
+        };
+        await NaploBetolteseAsync();
     }
 
     private async Task FutasHibaiBetolteseAsync(ImportFutasSor? futas)

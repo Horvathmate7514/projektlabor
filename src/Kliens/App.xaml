@@ -18,6 +18,8 @@
       <DataTemplate DataType="{x:Type vm:LeltarozasViewModel}"><views:LeltarozasNezet/></DataTemplate>
       <DataTemplate DataType="{x:Type vm:EszkozokViewModel}"><views:EszkozokNezet/></DataTemplate>
       <DataTemplate DataType="{x:Type vm:ImportViewModel}"><views:ImportNezet/></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:IdoszakokViewModel}"><views:IdoszakokNezet/></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:LeolvasasiNaploViewModel}"><views:LeolvasasiNaploNezet/></DataTemplate>
       <DataTemplate DataType="{x:Type vm:KesobbViewModel}"><views:KesobbNezet/></DataTemplate>
     </ResourceDictionary>
   </Application.Resources>

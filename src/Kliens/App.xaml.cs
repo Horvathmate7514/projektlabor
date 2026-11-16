@@ -50,9 +50,13 @@ public partial class App : Application
         s.AddTransient<LeltarozasViewModel>();
         s.AddTransient<EszkozokViewModel>();
         s.AddTransient<ImportViewModel>();
+        s.AddTransient<IdoszakokViewModel>();
+        s.AddTransient<LeolvasasiNaploViewModel>();
         s.AddTransient<Func<LeltarozasViewModel>>(sp => sp.GetRequiredService<LeltarozasViewModel>);
         s.AddTransient<Func<EszkozokViewModel>>(sp => sp.GetRequiredService<EszkozokViewModel>);
         s.AddTransient<Func<ImportViewModel>>(sp => sp.GetRequiredService<ImportViewModel>);
+        s.AddTransient<Func<IdoszakokViewModel>>(sp => sp.GetRequiredService<IdoszakokViewModel>);
+        s.AddTransient<Func<LeolvasasiNaploViewModel>>(sp => sp.GetRequiredService<LeolvasasiNaploViewModel>);
         return s.BuildServiceProvider();
     }
 

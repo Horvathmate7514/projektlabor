@@ -86,6 +86,18 @@ public sealed class ApiKliens(HttpClient http)
     public Task<List<LeltarIdoszakAdat>> LeltarIdoszakokAsync(LeltarIdoszakStatusz? statusz, CancellationToken ct = default) =>
         GetAsync<List<LeltarIdoszakAdat>>(ApiUtvonalak.LeltarIdoszakok + Lekerdezes(("statusz", statusz)), ct);
 
+    public Task<LeltarIdoszakAdat> LeltarIdoszakAsync(long id, CancellationToken ct = default) =>
+        GetAsync<LeltarIdoszakAdat>($"{ApiUtvonalak.LeltarIdoszakok}/{id}", ct);
+
+    public Task<LeltarIdoszakAdat> LeltarIdoszakLetrehozasaAsync(LeltarIdoszakLetrehozas keres, CancellationToken ct = default) =>
+        PostAsync<LeltarIdoszakAdat>(ApiUtvonalak.LeltarIdoszakok, keres, ct);
+
+    public Task<LeltarIdoszakAdat> LeltarIdoszakNyitasaAsync(long id, CancellationToken ct = default) =>
+        PostAsync<LeltarIdoszakAdat>(ApiUtvonalak.Nyitas(id), new { }, ct);
+
+    public Task<LeltarIdoszakAdat> LeltarIdoszakLezarasaAsync(long id, CancellationToken ct = default) =>
+        PostAsync<LeltarIdoszakAdat>(ApiUtvonalak.Lezaras(id), new { }, ct);
+
     public Task<BeolvasasEredmeny> BeolvasasAsync(long idoszakId, BeolvasasKeres keres, CancellationToken ct = default) =>
         PostAsync<BeolvasasEredmeny>(ApiUtvonalak.IdoszakLeolvasasai(idoszakId), keres, ct);
 
@@ -117,8 +129,9 @@ public sealed class ApiKliens(HttpClient http)
     public Task<ImportEredmeny> ImportVegrehajtasAsync(string fajlUt, ImportBeallitasok beallitasok, CancellationToken ct = default) =>
         FeltoltesAsync<ImportEredmeny>(ApiUtvonalak.Importok, fajlUt, beallitasok, ct);
 
-    public Task<LapozottLista<ImportFutasListaElem>> ImportNaploAsync(int oldal, int oldalMeret, CancellationToken ct = default) =>
-        GetAsync<LapozottLista<ImportFutasListaElem>>(ApiUtvonalak.Importok + Lekerdezes(("oldal", oldal), ("oldalMeret", oldalMeret)), ct);
+    public Task<LapozottLista<ImportFutasListaElem>> ImportNaploAsync(int oldal, int oldalMeret, ImportStatusz? statusz = null, CancellationToken ct = default) =>
+        GetAsync<LapozottLista<ImportFutasListaElem>>(ApiUtvonalak.Importok + Lekerdezes(
+            ("oldal", oldal), ("oldalMeret", oldalMeret), ("statusz", statusz)), ct);
 
     public Task<ImportFutasReszletek> ImportFutasAsync(long id, CancellationToken ct = default) =>
         GetAsync<ImportFutasReszletek>(ApiUtvonalak.Import(id), ct);

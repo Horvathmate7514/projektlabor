@@ -7,6 +7,7 @@ namespace Leltarkezelo.Client.ViewModels;
 public abstract partial class OldalViewModel : ObservableObject
 {
     private bool _betoltve;
+    private int _futoMuveletek;
 
     [ObservableProperty]
     private bool _foglalt;
@@ -17,7 +18,7 @@ public abstract partial class OldalViewModel : ObservableObject
     public abstract string Cim { get; }
 
     /// <summary>Az oldal első megjelenítésekor egyszer fut le; a menüben visszalépve az állapot megmarad.</summary>
-    public async Task MegjelenitesAsync()
+    public virtual async Task MegjelenitesAsync()
     {
         if (_betoltve)
             return;
@@ -30,6 +31,7 @@ public abstract partial class OldalViewModel : ObservableObject
     /// <summary>Szerverhívás futtatása: közben foglalt, a hibát az oldal tetején jeleníti meg.</summary>
     protected async Task<bool> FuttatasAsync(Func<Task> muvelet)
     {
+        _futoMuveletek++;
         Foglalt = true;
         Hiba = null;
         try
@@ -44,7 +46,7 @@ public abstract partial class OldalViewModel : ObservableObject
         }
         finally
         {
-            Foglalt = false;
+            Foglalt = --_futoMuveletek > 0;
         }
     }
 }
