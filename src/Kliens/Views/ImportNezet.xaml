@@ -29,6 +29,9 @@
     </Border>
 
     <Grid Visibility="{Binding Engedelyezett, Converter={StaticResource Lathato}}">
+      <Grid.Style><Style TargetType="Grid"><Style.Triggers>
+        <DataTrigger Binding="{Binding Foglalt}" Value="True"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
+      </Style.Triggers></Style></Grid.Style>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="Auto"/>
@@ -62,6 +65,26 @@
                         ToolTip="Ismételt importnál a már nyilvántartott eszközök (SAP szám alapján) módosításai is bekerülnek"/>
             </WrapPanel>
           </DockPanel>
+          <Expander Header="Kézi oszlop-hozzárendelés (opcionális)" IsExpanded="{Binding OszlopokNyitva}" Margin="4,8,0,0">
+            <StackPanel>
+              <TextBlock Text="Írd be a mezőhöz tartozó Excel-oszlop pontos fejlécét. Az üresen hagyott mezőket a szerver automatikusan ismeri fel. Módosítás után új próbafuttatás szükséges." Style="{StaticResource Halvany}" Margin="0,8"/>
+              <WrapPanel>
+                <Button Content="Automatikus felismerés visszaállítása" Command="{Binding OszlopokTorleseCommand}" Style="{StaticResource MasodlagosGomb}"/>
+                <Button Content="Felismert hozzárendelések átvétele" Command="{Binding FelismertOszlopokAtveteleCommand}" IsEnabled="{Binding VanElemzes}" Style="{StaticResource MasodlagosGomb}"/>
+              </WrapPanel>
+              <DataGrid ItemsSource="{Binding Oszlopok}" IsReadOnly="False" MaxHeight="190" Margin="0,6,0,0" AutomationProperties.Name="Import oszlop-hozzárendelések">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Rendszermező" Binding="{Binding Nev}" IsReadOnly="True" Width="200"/>
+                  <DataGridTextColumn Header="Követelmény" Binding="{Binding Kotelezo}" IsReadOnly="True" Width="140"/>
+                  <DataGridTemplateColumn Header="Excel-fejléc (üresen: automatikus)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate>
+                      <TextBox Text="{Binding Fejlec, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{Binding Nev}"/>
+                    </DataTemplate></DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </StackPanel>
+          </Expander>
         </StackPanel>
       </Border>
 
@@ -129,11 +152,28 @@
               <RowDefinition Height="Auto"/>
               <RowDefinition Height="0.8*"/>
             </Grid.RowDefinitions>
-            <DockPanel>
-              <Button DockPanel.Dock="Right" Content="Frissítés" Command="{Binding NaploFrissiteseCommand}" Style="{StaticResource LinkGomb}"/>
-              <TextBlock Text="Importnapló" Style="{StaticResource KartyaCim}" Margin="0"/>
-            </DockPanel>
-            <DataGrid Grid.Row="1" ItemsSource="{Binding Futasok}" SelectedItem="{Binding KivalasztottFutas}" Margin="0,6,0,0">
+            <StackPanel>
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Frissítés" Command="{Binding NaploFrissiteseCommand}" Style="{StaticResource LinkGomb}"/>
+                <TextBlock Text="Importnapló" Style="{StaticResource KartyaCim}" Margin="0"/>
+              </DockPanel>
+              <WrapPanel Margin="0,6,0,0">
+                <ComboBox ItemsSource="{Binding NaploStatuszok}" SelectedItem="{Binding NaploStatusz}" DisplayMemberPath="Nev" Width="190"
+                          AutomationProperties.Name="Importnapló státuszszűrő"/>
+                <ComboBox ItemsSource="{Binding NaploOldalMeretek}" SelectedItem="{Binding NaploOldalMeret}" Width="65" AutomationProperties.Name="Importnapló oldalmérete"/>
+              </WrapPanel>
+            </StackPanel>
+            <DockPanel Grid.Row="1">
+              <StackPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                <WrapPanel>
+                  <Button Content="«" ToolTip="Első oldal" Command="{Binding NaploOldalraCommand}" CommandParameter="elso" IsEnabled="{Binding VanElozoNaploOldal}" Style="{StaticResource MasodlagosGomb}"/>
+                  <Button Content="‹" ToolTip="Előző oldal" Command="{Binding NaploOldalraCommand}" CommandParameter="elozo" IsEnabled="{Binding VanElozoNaploOldal}" Style="{StaticResource MasodlagosGomb}"/>
+                  <Button Content="›" ToolTip="Következő oldal" Command="{Binding NaploOldalraCommand}" CommandParameter="kovetkezo" IsEnabled="{Binding VanKovetkezoNaploOldal}" Style="{StaticResource MasodlagosGomb}"/>
+                  <Button Content="»" ToolTip="Utolsó oldal" Command="{Binding NaploOldalraCommand}" CommandParameter="utolso" IsEnabled="{Binding VanKovetkezoNaploOldal}" Style="{StaticResource MasodlagosGomb}"/>
+                </WrapPanel>
+                <TextBlock Text="{Binding NaploLapozasSzoveg}" Style="{StaticResource Halvany}"/>
+              </StackPanel>
+            <DataGrid ItemsSource="{Binding Futasok}" SelectedItem="{Binding KivalasztottFutas}" Margin="0,6,0,0">
               <DataGrid.Columns>
                 <DataGridTextColumn Header="Időpont" Binding="{Binding Ido}" Width="Auto"/>
                 <DataGridTextColumn Header="Fájl" Binding="{Binding Fajlnev}" Width="*"/>
@@ -150,6 +190,7 @@
                 </DataGridTemplateColumn>
               </DataGrid.Columns>
             </DataGrid>
+            </DockPanel>
             <StackPanel Grid.Row="2" Margin="0,10,0,4" DataContext="{Binding KivalasztottFutas}"
                         Visibility="{Binding Converter={StaticResource Lathato}}">
               <TextBlock Text="{Binding Eredmeny}" FontWeight="SemiBold"/>

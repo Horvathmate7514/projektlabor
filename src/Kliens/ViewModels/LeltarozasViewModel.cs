@@ -102,6 +102,9 @@ public sealed partial class LeltarozasViewModel(ApiKliens api, Munkamenet munkam
     /// <summary>A nézet erre visszaviszi a fókuszt a beolvasó mezőbe (az olvasó billentyűzetként ír, F-09).</summary>
     public event EventHandler? FokuszKell;
 
+    // Időszakkezelés után visszatérve a nyitott időszakok listája is frissüljön.
+    public override Task MegjelenitesAsync() => BetoltesAsync();
+
     protected override async Task BetoltesAsync()
     {
         if (!Engedelyezett)
@@ -112,6 +115,9 @@ public sealed partial class LeltarozasViewModel(ApiKliens api, Munkamenet munkam
 
         await FuttatasAsync(async () =>
         {
+            var korabbiIdoszak = Idoszak?.Id;
+            var korabbiKorzet = Korzet?.Id;
+            var korabbiHelyiseg = Helyiseg?.Id;
             var idoszakok = api.LeltarIdoszakokAsync(LeltarIdoszakStatusz.Nyitott);
             var korzetek = api.LeltarkorzetekAsync();
             var helyisegek = api.HelyisegekAsync();
@@ -127,9 +133,10 @@ public sealed partial class LeltarozasViewModel(ApiKliens api, Munkamenet munkam
             foreach (var h in await helyisegek)
                 Helyisegek.Add(new Valasztas(h.Id, EszkozokViewModel.HelyisegNev(h)));
 
-            Helyiseg = Helyisegek[0];
-            Idoszak = Idoszakok.FirstOrDefault();
-            Korzet = Korzetek.FirstOrDefault(k => k.Leltarozhato);
+            Helyiseg = Helyisegek.FirstOrDefault(h => h.Id == korabbiHelyiseg) ?? Helyisegek[0];
+            Idoszak = Idoszakok.FirstOrDefault(i => i.Id == korabbiIdoszak) ?? Idoszakok.FirstOrDefault();
+            Korzet = Korzetek.FirstOrDefault(k => k.Id == korabbiKorzet && k.Leltarozhato)
+                ?? Korzetek.FirstOrDefault(k => k.Leltarozhato);
 
             Figyelmeztetes = (Idoszak, Korzet) switch
             {
@@ -138,6 +145,7 @@ public sealed partial class LeltarozasViewModel(ApiKliens api, Munkamenet munkam
                 _ => null,
             };
         });
+        await UtolsoBeolvasasokFrissiteseAsync();
         FokuszKell?.Invoke(this, EventArgs.Empty);
     }
 
@@ -146,7 +154,7 @@ public sealed partial class LeltarozasViewModel(ApiKliens api, Munkamenet munkam
     [RelayCommand]
     private async Task FrissitesAsync()
     {
-        await UtolsoBeolvasasokFrissiteseAsync();
+        await BetoltesAsync();
         FokuszKell?.Invoke(this, EventArgs.Empty);
     }
 
