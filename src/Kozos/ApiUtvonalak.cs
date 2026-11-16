@@ -28,6 +28,8 @@ public static class ApiUtvonalak
     public static string Osszesites(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/osszesites";
     public static string Tetelek(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/tetelek";
     public static string ElvartTetelek(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/elvart-tetelek";
+    public static string TetelekExcel(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/tetelek.xlsx";
+    public static string Osszevetes(long idoszakId) => $"{LeltarIdoszakok}/{idoszakId}/osszevetes";
     public static string Sztorno(long leolvasasId) => $"{Leolvasasok}/{leolvasasId}/sztorno";
     public static string Import(long futasId) => $"{Importok}/{futasId}";
     public static string ImportHibakExcel(long futasId) => $"{Importok}/{futasId}/hibak.xlsx";

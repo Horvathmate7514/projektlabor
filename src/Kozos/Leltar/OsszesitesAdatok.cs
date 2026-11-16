@@ -45,7 +45,8 @@ public sealed record OsszesitesTetel(
     int Tobblet,
     TetelAllapot Allapot,
     IReadOnlyList<string> TalaltKorzetek,
-    DateTime? UtolsoBeolvasas);
+    DateTime? UtolsoBeolvasas,
+    bool Megszunt = false);
 
 public sealed record OsszesitesSzuro
 {
