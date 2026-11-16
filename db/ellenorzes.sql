@@ -329,5 +329,37 @@ INSERT @Kov
 SELECT N'A nyitott leltárban minden minősítésre van példa (demóadat)', 6 - COUNT(DISTINCT l.Minosites)
 FROM dbo.Leolvasas l JOIN dbo.LeltarIdoszak i ON i.Id = l.LeltarIdoszakId WHERE i.Statusz = 'NYITOTT';
 
+-- Hely, felelős, állapot és kiegészítők (8. és 10. alkalom, D-042–D-045)
+INSERT @Kov
+SELECT N'Megszűnt állapotú eszköznek nincs aktuális helye és felelőse', COUNT(*)
+FROM dbo.Eszkoz e JOIN dbo.EszkozAllapot a ON a.Id = e.EszkozAllapotId
+WHERE a.Megszunt = 1
+  AND (EXISTS (SELECT 1 FROM dbo.Elhelyezes h WHERE h.EszkozId = e.Id AND h.ErvenyesIg IS NULL)
+    OR EXISTS (SELECT 1 FROM dbo.FelelosHozzarendeles f WHERE f.EszkozId = e.Id AND f.ErvenyesIg IS NULL));
+
+INSERT @Kov
+SELECT N'Az eszköz állapota megegyezik az utolsó állapotváltozásával', COUNT(*)
+FROM dbo.Eszkoz e
+CROSS APPLY (SELECT TOP 1 v.UjAllapotId FROM dbo.AllapotValtozas v WHERE v.EszkozId = e.Id ORDER BY v.Idopont DESC, v.Id DESC) u
+WHERE u.UjAllapotId <> e.EszkozAllapotId;
+
+INSERT @Kov
+SELECT N'A leltárból származó hely leolvasása ugyanarra az eszközre és helyiségre szól', COUNT(*)
+FROM dbo.Elhelyezes h JOIN dbo.Leolvasas l ON l.Id = h.LeolvasasId
+WHERE l.EszkozId <> h.EszkozId OR l.HelyisegId IS NULL OR l.HelyisegId <> h.HelyisegId;
+
+INSERT @Kov
+SELECT N'A kiegészítő ellenőrzése a fő eszköz leolvasásához tartozik', COUNT(*)
+FROM dbo.KiegeszitoEllenorzes ke JOIN dbo.Kiegeszito k ON k.Id = ke.KiegeszitoId JOIN dbo.Leolvasas l ON l.Id = ke.LeolvasasId
+WHERE l.EszkozId IS NULL OR l.EszkozId <> k.FoEszkozId;
+
+INSERT @Kov
+SELECT N'A leltárban beolvasott kiegészítő nem maradt feltételezett (F-20)', COUNT(*)
+FROM dbo.KiegeszitoEllenorzes ke JOIN dbo.Kiegeszito k ON k.Id = ke.KiegeszitoId JOIN dbo.Leolvasas l ON l.Id = ke.LeolvasasId
+WHERE ke.Mod = 'FELTETELEZETT' AND k.KiegeszitoEszkozId IS NOT NULL
+  AND EXISTS (SELECT 1 FROM dbo.Leolvasas s
+              WHERE s.LeltarIdoszakId = l.LeltarIdoszakId AND s.EszkozId = k.KiegeszitoEszkozId AND s.Sztornozva = 0
+                AND s.Minosites NOT IN ('ISMERETLEN_KOD', 'NEM_AKTIV'));
+
 SELECT Sorszam, Ellenorzes, CASE WHEN Elteresek = 0 THEN N'MEGFELELT' ELSE N'HIBA' END AS Eredmeny, Elteresek
 FROM @Kov ORDER BY Sorszam;

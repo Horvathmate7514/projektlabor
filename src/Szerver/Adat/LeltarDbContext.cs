@@ -27,6 +27,44 @@ public class LeltarDbContext(DbContextOptions<LeltarDbContext> options) : DbCont
     public DbSet<ImportHiba> ImportHibak => Set<ImportHiba>();
     public DbSet<AuditNaplo> AuditNaplo => Set<AuditNaplo>();
 
+    /// <summary>A kérést végző felhasználó; az audit napló és az eszköz módosítási mezői ezt rögzítik.</summary>
+    public long? AktualisFelhasznaloId { get; set; }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        var most = DateTime.UtcNow;
+        var audit = AuditKeszito.Elokeszites(this, most);
+        if (!audit.VanUjEntitas)
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+
+        // Az új entitás azonosítója csak a mentés után ismert, ezért a naplósora második mentésben készül;
+        // a két mentést tranzakció fogja össze, ha az adatbázis támogatja, és még nincs nyitva egy.
+        using var tranzakcio = SajatTranzakcioKell ? Database.BeginTransaction() : null;
+        var sorok = base.SaveChanges(acceptAllChangesOnSuccess);
+        audit.UjakNaplozasa(this, most);
+        base.SaveChanges(acceptAllChangesOnSuccess);
+        tranzakcio?.Commit();
+        return sorok;
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        var most = DateTime.UtcNow;
+        var audit = AuditKeszito.Elokeszites(this, most);
+        if (!audit.VanUjEntitas)
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+
+        await using var tranzakcio = SajatTranzakcioKell ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        var sorok = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        audit.UjakNaplozasa(this, most);
+        await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (tranzakcio is not null)
+            await tranzakcio.CommitAsync(cancellationToken);
+        return sorok;
+    }
+
+    private bool SajatTranzakcioKell => Database.IsRelational() && Database.CurrentTransaction is null;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LeltarDbContext).Assembly);

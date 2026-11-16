@@ -239,7 +239,9 @@ eltéréseket.
 
 ## 9. Nyitott pontok
 
-- **A valódi forrásfájl** még mindig nem érkezett meg az oktatótól.
+- **A valódi forráslisták** megvannak (két SAP-eszközlista). Az import még nem tudja betölteni őket, az igazításhoz a
+  csoport döntése kell (leltárkörzet, alszámok, ismétlődő kódok). A listák nem kerülnek a repóba, amíg nem tisztázott,
+  hogy szabad-e.
 - **Az SQL Serveres tesztek a CI-ban nem futnak**, csak helyben (D-039).
 - **A dokumentáció** Horváth Máté 7. alkalmi fejezetét még nem tartalmazza: ez az ő anyaga, az `.md` változat kész.
 - **Az összesítés a kliensben** még nem jelenik meg (Bárkányi Máté).
