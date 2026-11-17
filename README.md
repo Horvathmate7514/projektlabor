@@ -90,6 +90,7 @@ A kiírás szerint az 1. alkalmon **még nincs program és nincs dokumentáció*
 | [db/minta/forrasadatok_mennyisegek.xlsx](db/minta/forrasadatok_mennyisegek.xlsx) | Mintafájl a szöveges mennyiségekhez és az ismételt importhoz |
 | [08_alkalom/01_Hely_felelos_tipus_kiegeszitok.md](08_alkalom/01_Hely_felelos_tipus_kiegeszitok.md) | 8. alkalom, szerveroldal: helyiségek, hely a beolvasásból, felelős, eszköztípusok, kiegészítők ellenőrzése |
 | [10_alkalom/01_Allapotok_tortenetiseg_audit.md](10_alkalom/01_Allapotok_tortenetiseg_audit.md) | 10. alkalom, szerveroldal: állapotváltás, az eszköz története, korábbi időpont visszakeresése, audit napló |
+| [10_alkalom/Prezentacio/](10_alkalom/Prezentacio/) | 10 perces prezentáció (16 dia) a 8–10. alkalomról, előadói jegyzetekkel, képernyőképekkel |
 
 ## Forráskód
 
